@@ -8,7 +8,7 @@ MULTILIB_LIST="--with-multilib-list=armv6-m,armv7-m,armv7e-m,armv7-r"
 GCC_VERSION=4.8
 GCC_PACKAGE=gcc-$(GCC_VERSION)
 
-package=$(GCC_PACKAGE)-arm-none-eabi
+package=gcc-arm-none-eabi
 top_dir=$(shell pwd)
 gcc_dir=/usr/src/$(GCC_PACKAGE)
 stampdir=debian/stamp
@@ -57,6 +57,7 @@ configure_flags = \
     --disable-shared \
     --disable-threads \
     --disable-tls \
+    --disable-plugin \
     --with-gnu-as \
     --with-as=/usr/bin/$(target)-as \
     --with-gnu-ld \
@@ -96,11 +97,14 @@ override_dh_auto_test:
 #	dh_auto_test -D$(src_dir) -B$(build_dir) --max-parallel=1
 
 override_dh_gencontrol:
-	dh_gencontrol -a -- -v$(deb_version) -Vlocal:Version=$(deb_upstream_version) -Vbinutils:Version=$(source_version)
+	dh_gencontrol -a -- -v$(deb_version) -Vlocal:Version=$(deb_upstream_version) -Vgcc:Version=$(source_version)
 
 override_dh_auto_install:
 	mkdir -p $(top_dir)/debian/tmp
 	cd build && make install DESTDIR=$(top_dir)/debian/tmp
 
 override_dh_strip:
-	echo not stripping anything
+	strip debian/gcc-arm-none-eabi/usr/bin/*
+	for prog in cc1 collect2 install-tools/fixincl lto-wrapper lto1 plugin/gengtype; do \
+		strip debian/gcc-arm-none-eabi/usr/lib/gcc-arm-none-eabi/gcc/arm-none-eabi/4.8.1/$$prog; \
+	done
