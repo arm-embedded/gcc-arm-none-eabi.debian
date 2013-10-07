@@ -89,7 +89,6 @@ override_dh_auto_configure: $(unpack_stamp)
 	dh_auto_configure -D$(src_dir) -B$(build_dir) -- $(configure_flags)
 
 override_dh_auto_clean:
-	dh_auto_clean -D$(src_dir) -B$(build_dir)
 	rm -rf $(upstream_dir) $(build_dir) debian/tmp $(stampdir)
 
 override_dh_auto_test:
