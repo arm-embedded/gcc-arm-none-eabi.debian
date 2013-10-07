@@ -1,0 +1,106 @@
+#!/usr/bin/make -f
+export DH_VERBOSE=1
+
+target=arm-none-eabi
+
+MULTILIB_LIST="--with-multilib-list=armv6-m,armv7-m,armv7e-m,armv7-r"
+
+GCC_VERSION=4.8
+GCC_PACKAGE=gcc-$(GCC_VERSION)
+
+package=$(GCC_PACKAGE)-arm-none-eabi
+top_dir=$(shell pwd)
+gcc_dir=/usr/src/$(GCC_PACKAGE)
+stampdir=debian/stamp
+
+source_version := $(shell dpkg-query -W -f="\$${Version}\n" $(GCC_PACKAGE)-source)
+deb_version := $(source_version)+$(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
+deb_upstream_version := $(shell echo $(deb_version) | cut -d- -f1)
+base_version := $(shell echo $(deb_version) | sed -e 's/\([1-9]\.[0-9]\).*-.*/\1/')
+
+upstream_dir=gcc-$(deb_upstream_version)
+
+unpack_stamp=$(stampdir)/unpack
+tar_stamp=$(stampdir)/tar
+
+src_dir=$(upstream_dir)
+build_dir=build
+
+buildflags=CFLAGS="-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat" CPPFLAGS="-D_FORTIFY_SOURCE=2" CXXFLAGS="-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat" FFLAGS="-g -O2" LDFLAGS="-Wl,-z,relro"
+
+target_tools=\
+	AR_FOR_TARGET=$(target)-ar \
+	AS_FOR_TARGET=$(target)-as \
+	LD_FOR_TARGET=$(target)-ld \
+	NM_FOR_TARGET=$(target)-nm \
+	OBJDUMP_FOR_TARGET=$(target)-objdump \
+	RANLIB_FOR_TARGET=$(target)-ranlib \
+	READELF_FOR_TARGET=$(target)-readelf \
+	STRIP_FOR_TARGET=$(target)-strip
+
+configure_flags = \
+    --target=$(target) \
+    --exec-prefix=\$${prefix} \
+    --bindir=\$${prefix}/bin \
+    --infodir=$${prefix}/usr/share/doc/$(package)/info \
+    --htmldir=$${prefix}/usr/share/doc/$(package)/html \
+    --pdfdir=$${prefix}/usr/share/doc/$(package)/pdf \
+    --enable-languages=c \
+    --disable-decimal-float \
+    --disable-libffi \
+    --disable-libgomp \
+    --disable-libmudflap \
+    --disable-libquadmath \
+    --disable-libssp \
+    --disable-libstdcxx-pch \
+    --disable-nls \
+    --disable-shared \
+    --disable-threads \
+    --disable-tls \
+    --with-gnu-as \
+    --with-as=/usr/bin/$(target)-as \
+    --with-gnu-ld \
+    --with-ld=/usr/bin/$(target)-ld \
+    --with-headers=no \
+    --without-newlib \
+    "--with-pkgversion=$(deb_version)" \
+    $(MULTILIB_LIST) \
+    $(buildflags) \
+    $(target_tools)
+
+%:
+	dh $@ -D$(src_dir) -B$(build_dir) --with autotools-dev --parallel
+
+$(unpack_stamp): $(tar_stamp)
+	for patch in debian/patches/[0-9]*.patch; do \
+		echo Applying patch "$$patch"; \
+		patch -p1 < "$$patch"; \
+	done && touch $@
+
+$(tar_stamp):
+	tar xf $(gcc_dir)/gcc-*.tar.*
+	mkdir -p $(stampdir)
+	cp /usr/share/doc/$(GCC_PACKAGE)-source/copyright debian/copyright
+	touch $@
+
+override_dh_auto_configure: $(unpack_stamp)
+	mkdir -p $(build_dir)
+	dh_auto_configure -D$(src_dir) -B$(build_dir) -- $(configure_flags)
+
+override_dh_auto_clean:
+	dh_auto_clean -D$(src_dir) -B$(build_dir)
+	rm -rf $(upstream_dir) $(build_dir) debian/tmp $(stampdir)
+
+override_dh_auto_test:
+	@echo "no testing, that's way too painful"
+#	dh_auto_test -D$(src_dir) -B$(build_dir) --max-parallel=1
+
+override_dh_gencontrol:
+	dh_gencontrol -a -- -v$(deb_version) -Vlocal:Version=$(deb_upstream_version) -Vbinutils:Version=$(source_version)
+
+override_dh_auto_install:
+	mkdir -p $(top_dir)/debian/tmp
+	cd build && make install DESTDIR=$(top_dir)/debian/tmp
+
+override_dh_strip:
+	echo not stripping anything

@@ -1,0 +1,419 @@
+From 6d9c2c5fdf75f8295074cd960c3cb2aef9e57698 Mon Sep 17 00:00:00 2001
+From: Keith Packard <keithp@keithp.com>
+Date: Sun, 6 Oct 2013 15:03:43 -0700
+Subject: [PATCH 1/3] Add Linaro patches for M0/M3
+
+Signed-off-by: Keith Packard <keithp@keithp.com>
+---
+ gcc-4.8.1/gcc/ChangeLog.arm                        | 32 ++++++++
+ gcc-4.8.1/gcc/Makefile.in                          |  1 +
+ gcc-4.8.1/gcc/config.gcc                           |  2 +-
+ gcc-4.8.1/gcc/config/arm/arm-cores.def             |  1 +
+ gcc-4.8.1/gcc/config/arm/arm-tables.opt            |  3 +
+ gcc-4.8.1/gcc/config/arm/arm-tune.md               |  2 +-
+ gcc-4.8.1/gcc/config/arm/arm.c                     | 34 +++++++++
+ gcc-4.8.1/gcc/config/arm/t-mlibs                   | 86 ++++++++++++++++++++++
+ gcc-4.8.1/gcc/configure.ac                         |  3 +-
+ gcc-4.8.1/gcc/testsuite/ChangeLog.arm              |  7 ++
+ .../testsuite/gcc.target/arm/thumb1-far-jump-1.c   | 34 +++++++++
+ .../testsuite/gcc.target/arm/thumb1-far-jump-2.c   | 57 ++++++++++++++
+ 12 files changed, 259 insertions(+), 3 deletions(-)
+ create mode 100644 gcc-4.8.1/gcc/ChangeLog.arm
+ create mode 100644 gcc-4.8.1/gcc/config/arm/t-mlibs
+ create mode 100644 gcc-4.8.1/gcc/testsuite/ChangeLog.arm
+ create mode 100644 gcc-4.8.1/gcc/testsuite/gcc.target/arm/thumb1-far-jump-1.c
+ create mode 100644 gcc-4.8.1/gcc/testsuite/gcc.target/arm/thumb1-far-jump-2.c
+
+diff --git a/gcc-4.8.1/gcc/ChangeLog.arm b/gcc-4.8.1/gcc/ChangeLog.arm
+new file mode 100644
+index 0000000..6dcc931
+--- /dev/null
++++ b/gcc-4.8.1/gcc/ChangeLog.arm
+@@ -0,0 +1,32 @@
++2013-08-29  Zhenqiang Chen  <zhenqiang.chen@arm.com>
++
++	* config/arm/arm.c (arm_option_override): Disable loop2_invariant
++	pass when optimize_size and ira-loop-pressure is not enabled.
++
++2013-08-05  Terry Guo  <terry.guo@arm.com>
++
++	Backport from mainline r197956
++	2013-04-15  Joey Ye  <joey.ye@arm.com>
++
++	* config/arm/arm.c (thumb1_final_prescan_insn): Assert lr save
++	for real far jump.
++	(thumb_far_jump_used_p): Count instruction size and set
++	far_jump_used.
++
++2013-08-05  Terry Guo  <terry.guo@arm.com>
++
++	Backport from mainline r197153
++	2013-03-27  Terry Guo  <terry.guo@arm.com>
++
++	* config/arm/arm-cores.def: Added core cortex-r7.
++	* config/arm/arm-tune.md: Regenerated.
++	* config/arm/arm-tables.opt: Regenerated.
++	* doc/invoke.texi: Added entry for core cortex-r7.
++
++2013-07-24  Terry Guo  <terry.guo@arm.com>
++
++	* configure.ac (with_multilib_list): Export its value.
++	* Makefile.in (with_multilib_list): Import it from configure files.
++	* configure: Regenerated.
++	* config/arm/t-mlibs: New files to define multilibs.
++	* config.gcc: Use above multilib fragment.
+diff --git a/gcc-4.8.1/gcc/Makefile.in b/gcc-4.8.1/gcc/Makefile.in
+index 4b04d64..10fec32 100644
+--- a/gcc-4.8.1/gcc/Makefile.in
++++ b/gcc-4.8.1/gcc/Makefile.in
+@@ -526,6 +526,7 @@ lang_opt_files=@lang_opt_files@ $(srcdir)/c-family/c.opt $(srcdir)/common.opt
+ lang_specs_files=@lang_specs_files@
+ lang_tree_files=@lang_tree_files@
+ target_cpu_default=@target_cpu_default@
++with_multilib_list=@with_multilib_list@
+ OBJC_BOEHM_GC=@objc_boehm_gc@
+ extra_modes_file=@extra_modes_file@
+ extra_opt_files=@extra_opt_files@
+diff --git a/gcc-4.8.1/gcc/config.gcc b/gcc-4.8.1/gcc/config.gcc
+index 1a0be50..3475782 100644
+--- a/gcc-4.8.1/gcc/config.gcc
++++ b/gcc-4.8.1/gcc/config.gcc
+@@ -917,7 +917,7 @@ arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtems*)
+ 	case ${target} in
+ 	arm*-*-eabi*)
+ 	  tm_file="$tm_file newlib-stdint.h"
+-	  tmake_file="${tmake_file} arm/t-bpabi"
++	  tmake_file="${tmake_file} arm/t-bpabi arm/t-mlibs"
+ 	  use_gcc_stdint=wrap
+ 	  ;;
+ 	arm*-*-rtems*)
+diff --git a/gcc-4.8.1/gcc/config/arm/arm-cores.def b/gcc-4.8.1/gcc/config/arm/arm-cores.def
+index a4cb7c6..185f78e 100644
+--- a/gcc-4.8.1/gcc/config/arm/arm-cores.def
++++ b/gcc-4.8.1/gcc/config/arm/arm-cores.def
+@@ -132,6 +132,7 @@ ARM_CORE("cortex-a15",	  cortexa15,	7A,				 FL_LDSCHED | FL_THUMB_DIV | FL_ARM_D
+ ARM_CORE("cortex-r4",	  cortexr4,	7R,				 FL_LDSCHED, cortex)
+ ARM_CORE("cortex-r4f",	  cortexr4f,	7R,				 FL_LDSCHED, cortex)
+ ARM_CORE("cortex-r5",	  cortexr5,	7R,				 FL_LDSCHED | FL_ARM_DIV, cortex)
++ARM_CORE("cortex-r7",	  cortexr7,	7R,				 FL_LDSCHED | FL_ARM_DIV, cortex)
+ ARM_CORE("cortex-m4",	  cortexm4,	7EM,				 FL_LDSCHED, cortex)
+ ARM_CORE("cortex-m3",	  cortexm3,	7M,				 FL_LDSCHED, cortex)
+ ARM_CORE("cortex-m1",	  cortexm1,	6M,				 FL_LDSCHED, v6m)
+diff --git a/gcc-4.8.1/gcc/config/arm/arm-tables.opt b/gcc-4.8.1/gcc/config/arm/arm-tables.opt
+index 06a529d..ad52d18 100644
+--- a/gcc-4.8.1/gcc/config/arm/arm-tables.opt
++++ b/gcc-4.8.1/gcc/config/arm/arm-tables.opt
+@@ -259,6 +259,9 @@ EnumValue
+ Enum(processor_type) String(cortex-r5) Value(cortexr5)
+ 
+ EnumValue
++Enum(processor_type) String(cortex-r7) Value(cortexr7)
++
++EnumValue
+ Enum(processor_type) String(cortex-m4) Value(cortexm4)
+ 
+ EnumValue
+diff --git a/gcc-4.8.1/gcc/config/arm/arm-tune.md b/gcc-4.8.1/gcc/config/arm/arm-tune.md
+index 26c2e1f..ac85f94 100644
+--- a/gcc-4.8.1/gcc/config/arm/arm-tune.md
++++ b/gcc-4.8.1/gcc/config/arm/arm-tune.md
+@@ -1,5 +1,5 @@
+ ;; -*- buffer-read-only: t -*-
+ ;; Generated automatically by gentune.sh from arm-cores.def
+ (define_attr "tune"
+-	"arm2,arm250,arm3,arm6,arm60,arm600,arm610,arm620,arm7,arm7d,arm7di,arm70,arm700,arm700i,arm710,arm720,arm710c,arm7100,arm7500,arm7500fe,arm7m,arm7dm,arm7dmi,arm8,arm810,strongarm,strongarm110,strongarm1100,strongarm1110,fa526,fa626,arm7tdmi,arm7tdmis,arm710t,arm720t,arm740t,arm9,arm9tdmi,arm920,arm920t,arm922t,arm940t,ep9312,arm10tdmi,arm1020t,arm9e,arm946es,arm966es,arm968es,arm10e,arm1020e,arm1022e,xscale,iwmmxt,iwmmxt2,fa606te,fa626te,fmp626,fa726te,arm926ejs,arm1026ejs,arm1136js,arm1136jfs,arm1176jzs,arm1176jzfs,mpcorenovfp,mpcore,arm1156t2s,arm1156t2fs,genericv7a,cortexa5,cortexa7,cortexa8,cortexa9,cortexa15,cortexr4,cortexr4f,cortexr5,cortexm4,cortexm3,cortexm1,cortexm0,cortexm0plus,marvell_pj4"
++	"arm2,arm250,arm3,arm6,arm60,arm600,arm610,arm620,arm7,arm7d,arm7di,arm70,arm700,arm700i,arm710,arm720,arm710c,arm7100,arm7500,arm7500fe,arm7m,arm7dm,arm7dmi,arm8,arm810,strongarm,strongarm110,strongarm1100,strongarm1110,fa526,fa626,arm7tdmi,arm7tdmis,arm710t,arm720t,arm740t,arm9,arm9tdmi,arm920,arm920t,arm922t,arm940t,ep9312,arm10tdmi,arm1020t,arm9e,arm946es,arm966es,arm968es,arm10e,arm1020e,arm1022e,xscale,iwmmxt,iwmmxt2,fa606te,fa626te,fmp626,fa726te,arm926ejs,arm1026ejs,arm1136js,arm1136jfs,arm1176jzs,arm1176jzfs,mpcorenovfp,mpcore,arm1156t2s,arm1156t2fs,genericv7a,cortexa5,cortexa7,cortexa8,cortexa9,cortexa15,cortexr4,cortexr4f,cortexr5,cortexr7,cortexm4,cortexm3,cortexm1,cortexm0,cortexm0plus,marvell_pj4"
+ 	(const (symbol_ref "((enum attr_tune) arm_tune)")))
+diff --git a/gcc-4.8.1/gcc/config/arm/arm.c b/gcc-4.8.1/gcc/config/arm/arm.c
+index 460d333..6975820 100644
+--- a/gcc-4.8.1/gcc/config/arm/arm.c
++++ b/gcc-4.8.1/gcc/config/arm/arm.c
+@@ -2134,6 +2134,13 @@ arm_option_override (void)
+                          global_options.x_param_values,
+                          global_options_set.x_param_values);
+ 
++  /* Do not move invariants out of loops since it tends to increase register
++     pressure.  The heuristic to estimate register pressure does not fit for
++     ARM.  -fira-loop-pressure tends to get more precise estimation.  But it
++     still need more tuning.  */
++  if (optimize_function_for_size_p (cfun) && !flag_ira_loop_pressure)
++    flag_move_loop_invariants = 0;
++
+   /* Register global variables with the garbage collector.  */
+   arm_add_gc_roots ();
+ }
+@@ -22557,6 +22564,11 @@ thumb1_final_prescan_insn (rtx insn)
+       else if (conds != CONDS_NOCOND)
+ 	cfun->machine->thumb1_cc_insn = NULL_RTX;
+     }
++
++    /* Check if unexpected far jump is used.  */
++    if (cfun->machine->lr_save_eliminated
++        && get_attr_far_jump (insn) == FAR_JUMP_YES)
++      internal_error("Unexpected thumb1 far jump");
+ }
+ 
+ int
+@@ -22582,6 +22594,8 @@ static int
+ thumb_far_jump_used_p (void)
+ {
+   rtx insn;
++  bool far_jump = false;
++  unsigned int func_size = 0;
+ 
+   /* This test is only important for leaf functions.  */
+   /* assert (!leaf_function_p ()); */
+@@ -22637,6 +22651,26 @@ thumb_far_jump_used_p (void)
+ 	  && get_attr_far_jump (insn) == FAR_JUMP_YES
+ 	  )
+ 	{
++	  far_jump = true;
++	}
++      func_size += get_attr_length (insn);
++    }
++
++  /* Attribute far_jump will always be true for thumb1 before
++     shorten_branch pass.  So checking far_jump attribute before
++     shorten_branch isn't much useful.
++
++     Following heuristic tries to estimate more accruately if a far jump
++     may finally be used.  The heuristic is very conservative as there is
++     no chance to roll-back the decision of not to use far jump.
++
++     Thumb1 long branch offset is -2048 to 2046.  The worst case is each
++     2-byte insn is assiociated with a 4 byte constant pool.  Using
++     function size 2048/3 as the threshold is conservative enough.  */
++  if (far_jump)
++    {
++      if ((func_size * 3) >= 2048)
++        {
+ 	  /* Record the fact that we have decided that
+ 	     the function does use far jumps.  */
+ 	  cfun->machine->far_jump_used = 1;
+diff --git a/gcc-4.8.1/gcc/config/arm/t-mlibs b/gcc-4.8.1/gcc/config/arm/t-mlibs
+new file mode 100644
+index 0000000..c02118a
+--- /dev/null
++++ b/gcc-4.8.1/gcc/config/arm/t-mlibs
+@@ -0,0 +1,86 @@
++# A set of predefined MULTILIB which can be used for different ARM targets.
++# Via the configure option --with-multilib-list, user can customize the
++# final MULTILIB implementation.
++
++comma := ,
++space :=
++space +=
++
++MULTILIB_OPTIONS   = mthumb/marm
++MULTILIB_DIRNAMES  = thumb arm
++MULTILIB_OPTIONS  += march=armv6s-m/march=armv7-m/march=armv7e-m/march=armv7
++MULTILIB_DIRNAMES += armv6-m armv7-m armv7e-m armv7-ar
++MULTILIB_OPTIONS  += mfloat-abi=softfp/mfloat-abi=hard
++MULTILIB_DIRNAMES += softfp fpu
++MULTILIB_OPTIONS  += mfpu=fpv4-sp-d16/mfpu=vfpv3-d16
++MULTILIB_DIRNAMES += fpv4-sp-d16 vfpv3-d16
++
++MULTILIB_MATCHES   = march?armv6s-m=mcpu?cortex-m0
++MULTILIB_MATCHES  += march?armv6s-m=mcpu?cortex-m0plus
++MULTILIB_MATCHES  += march?armv6s-m=mcpu?cortex-m1
++MULTILIB_MATCHES  += march?armv6s-m=march?armv6-m
++MULTILIB_MATCHES  += march?armv7-m=mcpu?cortex-m3
++MULTILIB_MATCHES  += march?armv7e-m=mcpu?cortex-m4
++MULTILIB_MATCHES  += march?armv7=march?armv7-r
++MULTILIB_MATCHES  += march?armv7=march?armv7-a
++MULTILIB_MATCHES  += march?armv7=mcpu?cortex-r4
++MULTILIB_MATCHES  += march?armv7=mcpu?cortex-r4f
++MULTILIB_MATCHES  += march?armv7=mcpu?cortex-r5
++MULTILIB_MATCHES  += march?armv7=mcpu?cortex-r7
++MULTILIB_MATCHES  += march?armv7=mcpu?cortex-a5
++MULTILIB_MATCHES  += march?armv7=mcpu?cortex-a7
++MULTILIB_MATCHES  += march?armv7=mcpu?cortex-a8
++MULTILIB_MATCHES  += march?armv7=mcpu?cortex-a9
++MULTILIB_MATCHES  += march?armv7=mcpu?cortex-a15
++MULTILIB_MATCHES  += mfpu?vfpv3-d16=mfpu?vfpv3
++MULTILIB_MATCHES  += mfpu?vfpv3-d16=mfpu?vfpv3-fp16
++MULTILIB_MATCHES  += mfpu?vfpv3-d16=mfpu?vfpv3-d16-fp16
++MULTILIB_MATCHES  += mfpu?vfpv3-d16=mfpu?vfpv3xd
++MULTILIB_MATCHES  += mfpu?vfpv3-d16=mfpu?vfpv3xd-fp16
++MULTILIB_MATCHES  += mfpu?vfpv3-d16=mfpu?vfpv4
++MULTILIB_MATCHES  += mfpu?vfpv3-d16=mfpu?vfpv4-d16
++MULTILIB_MATCHES  += mfpu?vfpv3-d16=mfpu?neon
++MULTILIB_MATCHES  += mfpu?vfpv3-d16=mfpu?neon-fp16
++MULTILIB_MATCHES  += mfpu?vfpv3-d16=mfpu?neon-vfpv4
++
++MULTILIB_EXCEPTIONS =
++MULTILIB_REUSE =
++
++MULTILIB_REQUIRED  = mthumb
++MULTILIB_REQUIRED += marm
++MULTILIB_REQUIRED += mfloat-abi=hard
++
++MULTILIB_OSDIRNAMES  = mthumb=!thumb
++MULTILIB_OSDIRNAMES += marm=!arm
++MULTILIB_OSDIRNAMES += mfloat-abi.hard=!fpu
++
++ifneq (,$(findstring armv6-m,$(subst $(comma),$(space),$(with_multilib_list))))
++MULTILIB_REQUIRED   += mthumb/march=armv6s-m
++MULTILIB_OSDIRNAMES += mthumb/march.armv6s-m=!armv6-m
++endif
++
++ifneq (,$(findstring armv7-m,$(subst $(comma),$(space),$(with_multilib_list))))
++MULTILIB_REQUIRED   += mthumb/march=armv7-m
++MULTILIB_OSDIRNAMES += mthumb/march.armv7-m=!armv7-m
++endif
++
++ifneq (,$(findstring armv7e-m,$(subst $(comma),$(space),$(with_multilib_list))))
++MULTILIB_REQUIRED   += mthumb/march=armv7e-m
++MULTILIB_REQUIRED   += mthumb/march=armv7e-m/mfloat-abi=softfp/mfpu=fpv4-sp-d16
++MULTILIB_REQUIRED   += mthumb/march=armv7e-m/mfloat-abi=hard/mfpu=fpv4-sp-d16
++MULTILIB_OSDIRNAMES += mthumb/march.armv7e-m=!armv7e-m
++MULTILIB_OSDIRNAMES += mthumb/march.armv7e-m/mfloat-abi.hard/mfpu.fpv4-sp-d16=!armv7e-m/fpu
++MULTILIB_OSDIRNAMES += mthumb/march.armv7e-m/mfloat-abi.softfp/mfpu.fpv4-sp-d16=!armv7e-m/softfp
++endif
++
++ifneq (,$(filter armv7 armv7-r armv7-a,$(subst $(comma),$(space),$(with_multilib_list))))
++MULTILIB_REQUIRED   += mthumb/march=armv7
++MULTILIB_REQUIRED   += mthumb/march=armv7/mfloat-abi=softfp/mfpu=vfpv3-d16
++MULTILIB_REQUIRED   += mthumb/march=armv7/mfloat-abi=hard/mfpu=vfpv3-d16
++MULTILIB_OSDIRNAMES += mthumb/march.armv7=!armv7-ar/thumb
++MULTILIB_OSDIRNAMES += mthumb/march.armv7/mfloat-abi.hard/mfpu.vfpv3-d16=!armv7-ar/thumb/fpu
++MULTILIB_OSDIRNAMES += mthumb/march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16=!armv7-ar/thumb/softfp
++MULTILIB_REUSE      += mthumb/march.armv7=marm/march.armv7
++MULTILIB_REUSE      += mthumb/march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16=marm/march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16
++MULTILIB_REUSE      += mthumb/march.armv7/mfloat-abi.hard/mfpu.vfpv3-d16=marm/march.armv7/mfloat-abi.hard/mfpu.vfpv3-d16
++endif
+diff --git a/gcc-4.8.1/gcc/configure.ac b/gcc-4.8.1/gcc/configure.ac
+index 35a42d1..9811ab2 100644
+--- a/gcc-4.8.1/gcc/configure.ac
++++ b/gcc-4.8.1/gcc/configure.ac
+@@ -839,9 +839,10 @@ esac],
+ [enable_languages=c])
+ 
+ AC_ARG_WITH(multilib-list,
+-[AS_HELP_STRING([--with-multilib-list], [select multilibs (SH and x86-64 only)])],
++[AS_HELP_STRING([--with-multilib-list], [select multilibs (ARM, SH and x86-64 only)])],
+ :,
+ with_multilib_list=default)
++AC_SUBST(with_multilib_list)
+ 
+ # -------------------------
+ # Checks for other programs
+diff --git a/gcc-4.8.1/gcc/testsuite/ChangeLog.arm b/gcc-4.8.1/gcc/testsuite/ChangeLog.arm
+new file mode 100644
+index 0000000..d1861bb
+--- /dev/null
++++ b/gcc-4.8.1/gcc/testsuite/ChangeLog.arm
+@@ -0,0 +1,7 @@
++2013-08-05  Terry Guo  <terry.guo@arm.com>
++
++	Backport from mainline r197956
++	2013-04-15  Joey Ye  <joey.ye@arm.com>
++
++	* gcc.target/arm/thumb1-far-jump-1.c: New test.
++	* gcc.target/arm/thumb1-far-jump-2.c: New test.
+diff --git a/gcc-4.8.1/gcc/testsuite/gcc.target/arm/thumb1-far-jump-1.c b/gcc-4.8.1/gcc/testsuite/gcc.target/arm/thumb1-far-jump-1.c
+new file mode 100644
+index 0000000..eb16d2f
+--- /dev/null
++++ b/gcc-4.8.1/gcc/testsuite/gcc.target/arm/thumb1-far-jump-1.c
+@@ -0,0 +1,34 @@
++/* Check for thumb1 far jump. Shouldn't save lr for small leaf functions
++ * even with a branch in it.  */
++/* { dg-options "-Os" } */
++/* { dg-skip-if "" { ! { arm_thumb1 } } } */
++
++void f()
++{
++  for (;;);
++}
++
++volatile int g;
++void f2(int i)
++{
++  if (i) g=0;
++}
++
++void f3(int i)
++{
++  if (i) {
++    g=0;
++    g=1;
++    g=2;
++    g=3;
++    g=4;
++    g=5;
++    g=6;
++    g=7;
++    g=8;
++    g=9;
++  }
++}
++
++/* { dg-final { scan-assembler-not "push.*lr" } } */
++
+diff --git a/gcc-4.8.1/gcc/testsuite/gcc.target/arm/thumb1-far-jump-2.c b/gcc-4.8.1/gcc/testsuite/gcc.target/arm/thumb1-far-jump-2.c
+new file mode 100644
+index 0000000..c6878f8
+--- /dev/null
++++ b/gcc-4.8.1/gcc/testsuite/gcc.target/arm/thumb1-far-jump-2.c
+@@ -0,0 +1,57 @@
++/* Check for thumb1 far jump. This is the extreme case that far jump
++ * will be used with minimum number of instructions. By passing this case
++ * it means the heuristic of saving lr for far jump meets the most extreme
++ * requirement.  */
++/* { dg-options "-Os" } */
++/* { dg-skip-if "" { ! { arm_thumb1 } } } */
++
++volatile register r4 asm("r4");
++void f3(int i)
++{
++#define GO(n) \
++  extern volatile int g_##n; \
++  r4=(int)&g_##n;
++
++#define GO8(n) \
++  GO(n##_0) \
++  GO(n##_1) \
++  GO(n##_2) \
++  GO(n##_3) \
++  GO(n##_4) \
++  GO(n##_5) \
++  GO(n##_6) \
++  GO(n##_7)
++
++#define GO64(n) \
++  GO8(n##_0) \
++  GO8(n##_1) \
++  GO8(n##_2) \
++  GO8(n##_3) \
++  GO8(n##_4) \
++  GO8(n##_5) \
++  GO8(n##_6) \
++  GO8(n##_7) \
++
++#define GO498(n) \
++  GO64(n##_0) \
++  GO64(n##_1) \
++  GO64(n##_2) \
++  GO64(n##_3) \
++  GO64(n##_4) \
++  GO64(n##_5) \
++  GO64(n##_6) \
++  GO8(n##_0) \
++  GO8(n##_1) \
++  GO8(n##_2) \
++  GO8(n##_3) \
++  GO8(n##_4) \
++  GO8(n##_5) \
++  GO(n##_0) \
++  GO(n##_1) \
++
++  if (i) {
++    GO498(0);
++  }
++}
++
++/* { dg-final { scan-assembler "push.*lr" } } */
+-- 
+1.8.4.rc3
+

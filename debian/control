@@ -1,0 +1,17 @@
+Source: gcc-arm-none-eabi
+Section: development
+Priority: extra
+Maintainer: Keith Packard <keithp@keithp.com>
+Build-Depends: debhelper (>= 8.0.0),
+	binutils-arm-none-eabi,
+	autotools-dev
+Standards-Version: 3.9.4
+Homepage: http://keithp.com/
+X-Python-Version: >= 2.7
+
+Package: gcc-arm-none-eabi
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, binutils-arm-none-eabi
+Description: GCC compiler for ARM cortex -m0 and -m3 chips
+ Bare metal compiler for embedded ARM chips using the cortex-m0 and
+ cortex-m3 architecture
