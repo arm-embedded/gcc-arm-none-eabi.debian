@@ -89,7 +89,7 @@ override_dh_auto_configure: $(unpack_stamp)
 	dh_auto_configure -D$(src_dir) -B$(build_dir) -- $(configure_flags)
 
 override_dh_auto_clean:
-	rm -rf $(upstream_dir) $(build_dir) debian/tmp $(stampdir)
+	rm -rf $(upstream_dir) $(build_dir) debian/tmp debian/copyright $(stampdir)
 
 override_dh_auto_test:
 	@echo "no testing, that's way too painful"
