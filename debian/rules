@@ -104,6 +104,6 @@ override_dh_auto_install:
 
 override_dh_strip:
 	strip debian/gcc-arm-none-eabi/usr/bin/*
-	for prog in cc1 collect2 install-tools/fixincl lto-wrapper lto1 plugin/gengtype; do \
+	for prog in cc1 collect2 install-tools/fixincl lto-wrapper lto1; do \
 		strip debian/gcc-arm-none-eabi/usr/lib/gcc-arm-none-eabi/gcc/arm-none-eabi/4.8.1/$$prog; \
 	done
