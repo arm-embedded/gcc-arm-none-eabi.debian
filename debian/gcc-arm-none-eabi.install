@@ -1,5 +1,5 @@
 usr/share/man/man1
-usr/share/doc/gcc-4.8-arm-none-eabi
+usr/share/doc/gcc-arm-none-eabi
 usr/bin
 usr/lib/gcc-arm-none-eabi
 usr/lib/gcc
