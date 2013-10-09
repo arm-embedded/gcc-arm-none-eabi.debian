@@ -1,5 +1,12 @@
+gcc-arm-none-eabi (2) unstable; urgency=low
+
+  * Clean up install paths.
+
+ -- Keith Packard <keithp@keithp.com>  Wed, 09 Oct 2013 15:10:40 -0700
+
 gcc-arm-none-eabi (1) unstable; urgency=low
 
   * Initial release.
 
  -- Keith Packard <keithp@keithp.com>  Sun, 18 Aug 2013 02:49:03 +0200
+

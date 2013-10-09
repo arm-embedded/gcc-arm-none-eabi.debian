@@ -39,13 +39,16 @@ target_tools=\
 	STRIP_FOR_TARGET=$(target)-strip
 
 configure_flags = \
-    --target=$(target) \
-    --exec-prefix=\$${prefix} \
-    --bindir=\$${prefix}/bin \
-    --infodir=$${prefix}/usr/share/doc/$(package)/info \
-    --htmldir=$${prefix}/usr/share/doc/$(package)/html \
-    --pdfdir=$${prefix}/usr/share/doc/$(package)/pdf \
     --enable-languages=c \
+    --prefix=/usr/lib \
+    --infodir=/usr/share/doc/$(package)/info \
+    --mandir=/usr/share/man \
+    --htmldir=/usr/share/doc/$(package)/html \
+    --pdfdir=/usr/share/doc/$(package)/pdf \
+    --bindir=/usr/bin \
+    --libexecdir=/usr/lib \
+    --libdir=/usr/lib \
+    --with-system-zlib \
     --disable-decimal-float \
     --disable-libffi \
     --disable-libgomp \
@@ -58,6 +61,9 @@ configure_flags = \
     --disable-threads \
     --disable-tls \
     --disable-plugin \
+    --build=$(DEB_BUILD_GNU_TYPE) \
+    --host=$(DEB_HOST_GNU_TYPE) \
+    --target=$(target) \
     --with-gnu-as \
     --with-as=/usr/bin/$(target)-as \
     --with-gnu-ld \
@@ -65,6 +71,7 @@ configure_flags = \
     --with-headers=no \
     --without-newlib \
     "--with-pkgversion=$(deb_version)" \
+    --without-included-gettext \
     $(MULTILIB_LIST) \
     $(buildflags) \
     $(target_tools)
@@ -105,5 +112,5 @@ override_dh_auto_install:
 override_dh_strip:
 	strip debian/gcc-arm-none-eabi/usr/bin/*
 	for prog in cc1 collect2 install-tools/fixincl lto-wrapper lto1; do \
-		strip debian/gcc-arm-none-eabi/usr/lib/gcc-arm-none-eabi/gcc/arm-none-eabi/4.8.1/$$prog; \
+		strip debian/gcc-arm-none-eabi/usr/lib/gcc/arm-none-eabi/4.8.1/$$prog; \
 	done
