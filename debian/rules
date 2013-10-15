@@ -89,7 +89,7 @@ $(unpack_stamp): $(tar_stamp)
 $(tar_stamp):
 	tar xf $(gcc_dir)/gcc-*.tar.*
 	mkdir -p $(stampdir)
-	cp /usr/share/doc/$(GCC_PACKAGE)-source/copyright debian/copyright
+	cp /usr/share/doc/$(GCC_PACKAGE)-source/copyright debian/copyright-gcc
 	touch $@
 
 override_dh_auto_configure: $(unpack_stamp)
@@ -97,7 +97,7 @@ override_dh_auto_configure: $(unpack_stamp)
 	dh_auto_configure -D$(src_dir) -B$(build_dir) -- $(configure_flags)
 
 override_dh_auto_clean:
-	rm -rf $(upstream_dir) $(build_dir) debian/tmp debian/copyright $(stampdir)
+	rm -rf $(upstream_dir) $(build_dir) debian/tmp debian/copyright-gcc $(stampdir)
 
 override_dh_auto_test:
 	@echo "no testing, that's way too painful"
