@@ -11,6 +11,8 @@ GCC_PACKAGE=gcc-$(GCC_VERSION)
 package=gcc-arm-none-eabi
 top_dir=$(shell pwd)
 gcc_dir=/usr/src/$(GCC_PACKAGE)
+doc_dir=/usr/share/doc/$(package)
+build_doc_dir=$(top_dir)/debian/$(package)$(doc_dir)
 stampdir=debian/stamp
 
 source_version := $(shell dpkg-query -W -f="\$${Version}\n" $(GCC_PACKAGE)-source)
@@ -110,8 +112,13 @@ override_dh_auto_install:
 	mkdir -p $(top_dir)/debian/tmp
 	cd build && make install DESTDIR=$(top_dir)/debian/tmp
 
+override_dh_installchangelogs:
+	mkdir -p $(build_doc_dir)
+	gzip -9c $(gcc_dir)/debian/changelog > $(build_doc_dir)/changelog.gz
+	gzip -9c $(top_dir)/debian/changelog > $(build_doc_dir)/changelog.Debian.gz
+
 override_dh_strip:
 	strip debian/gcc-arm-none-eabi/usr/bin/*
 	for prog in cc1 collect2 install-tools/fixincl lto-wrapper; do \
-		strip debian/gcc-arm-none-eabi/usr/lib/gcc/arm-none-eabi/4.8.1/$$prog; \
+		strip debian/$(package)/usr/lib/gcc/arm-none-eabi/*/$$prog; \
 	done
