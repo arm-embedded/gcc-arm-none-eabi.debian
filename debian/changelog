@@ -1,3 +1,12 @@
+gcc-arm-none-eabi (3) unstable; urgency=low
+
+  * Don't install useless man pages
+  * Clean up lintian complaints
+  * Ship our own copyright file
+  * Install our changelog and gcc changelog
+
+ -- Keith Packard <keithp@keithp.com>  Tue, 15 Oct 2013 21:08:38 -0700
+
 gcc-arm-none-eabi (2) unstable; urgency=low
 
   * Clean up install paths.
