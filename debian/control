@@ -4,7 +4,7 @@ Priority: extra
 Maintainer: Keith Packard <keithp@keithp.com>
 Build-Depends: debhelper (>= 8.0.0), autotools-dev, m4, libtool,
         autoconf2.64, zlib1g-dev, gawk, lzma, xz-utils, patchutils,
-	bison, flex, gettext, texinfo, locales, sharutils, zlib1g-dev,
+	bison, flex, gettext, texinfo, locales, sharutils,
 	libmpfr-dev, libmpc-dev, libgmp-dev,
 	dejagnu, autogen, lsb-release, gcc-4.8-source,
 	binutils-arm-none-eabi,
