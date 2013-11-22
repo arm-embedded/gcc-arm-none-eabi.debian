@@ -2,6 +2,7 @@ Source: gcc-arm-none-eabi
 Section: devel
 Priority: extra
 Maintainer: Keith Packard <keithp@keithp.com>
+Uploaders: Agustin Henze <tin@debian.org>
 Build-Depends: debhelper (>= 8.0.0), autotools-dev, m4, libtool,
         autoconf2.64, zlib1g-dev, gawk, lzma, xz-utils, patchutils,
 	bison, flex, gettext, texinfo, locales, sharutils,
