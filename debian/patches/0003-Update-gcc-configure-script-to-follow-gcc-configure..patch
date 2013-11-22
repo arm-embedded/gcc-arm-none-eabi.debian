@@ -8,13 +8,13 @@ The configure script isn't automatically rebuilt, so just check in the changes
 
 Signed-off-by: Keith Packard <keithp@keithp.com>
 ---
- gcc-4.8.1/gcc/configure | 1478 ++++++++++++++++++++++++++++++++++++++---------
+ gcc-4.8.2/gcc/configure | 1478 ++++++++++++++++++++++++++++++++++++++---------
  1 file changed, 1198 insertions(+), 280 deletions(-)
 
-diff --git a/gcc-4.8.1/gcc/configure b/gcc-4.8.1/gcc/configure
+diff --git a/gcc-4.8.2/gcc/configure b/gcc-4.8.1/gcc/configure
 index feb9a5e..a8ec0f5 100755
---- a/gcc-4.8.1/gcc/configure
-+++ b/gcc-4.8.1/gcc/configure
+--- a/gcc-4.8.2/gcc/configure
++++ b/gcc-4.8.2/gcc/configure
 @@ -691,7 +691,10 @@ OTOOL
  LIPO
  NMEDIT
