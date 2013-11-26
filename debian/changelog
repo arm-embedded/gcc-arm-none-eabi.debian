@@ -1,3 +1,13 @@
+gcc-arm-none-eabi (4) unstable; urgency=low
+
+  * Update patches to the new gcc version 4.8.2 (Closes: #730324)
+  * Remove duplicate build-depend on zlib1g-dev
+  * Add myself in uploaders
+  * Package description improved.
+  * Add recommends on libnewlib-arm-none-eabi
+
+ -- Agustin Henze <tin@debian.org>  Tue, 26 Nov 2013 08:14:32 -0300
+
 gcc-arm-none-eabi (3) unstable; urgency=low
 
   * Don't install useless man pages

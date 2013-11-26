@@ -3,20 +3,39 @@ Section: devel
 Priority: extra
 Maintainer: Keith Packard <keithp@keithp.com>
 Uploaders: Agustin Henze <tin@debian.org>
-Build-Depends: debhelper (>= 8.0.0), autotools-dev, m4, libtool,
-        autoconf2.64, zlib1g-dev, gawk, lzma, xz-utils, patchutils,
-	bison, flex, gettext, texinfo, locales, sharutils,
-	libmpfr-dev, libmpc-dev, libgmp-dev,
-	dejagnu, autogen, lsb-release, gcc-4.8-source,
-	binutils-arm-none-eabi,
-	autotools-dev
+Build-Depends:
+ autoconf2.64,
+ autogen,
+ autotools-dev,
+ binutils-arm-none-eabi,
+ bison,
+ debhelper (>= 8.0.0),
+ dejagnu,
+ flex,
+ gawk,
+ gcc-4.8-source,
+ gettext,
+ libgmp-dev,
+ libmpc-dev,
+ libmpfr-dev,
+ libtool,
+ locales,
+ lsb-release,
+ lzma,
+ m4,
+ patchutils,
+ sharutils,
+ texinfo,
+ xz-utils,
+ zlib1g-dev,
 Standards-Version: 3.9.4
-Homepage: http://keithp.com/
+Homepage: http://gcc.gnu.org/
 X-Python-Version: >= 2.7
 
 Package: gcc-arm-none-eabi
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, binutils-arm-none-eabi
-Description: GCC compiler for ARM cortex -m0 and -m3 chips
- Bare metal compiler for embedded ARM chips using the cortex-m0 and
- cortex-m3 architecture
+Recommends: libnewlib-arm-none-eabi
+Description: GCC cross compiler for ARM Cortex-A/R/M processors
+ Bare metal compiler for embedded ARM chips using Cortex-M0/M0+/M3/M4,
+ Cortex-R4/R5/R7 and Cortex-A* processors.
