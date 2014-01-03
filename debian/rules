@@ -115,12 +115,7 @@ override_dh_auto_install:
 	cd build && make install DESTDIR=$(top_dir)/debian/tmp
 
 override_dh_installchangelogs:
-	mkdir -p $(build_doc_dir)
-	gzip -9c $(gcc_dir)/debian/changelog > $(build_doc_dir)/changelog.gz
-	gzip -9c $(top_dir)/debian/changelog > $(build_doc_dir)/changelog.Debian.gz
+	dh_installchangelogs $(upstream_dir)/ChangeLog
 
 override_dh_strip:
-	strip debian/gcc-arm-none-eabi/usr/bin/*
-	for prog in cc1 collect2 install-tools/fixincl lto-wrapper; do \
-		strip debian/$(package)/usr/lib/gcc/arm-none-eabi/*/$$prog; \
-	done
+	dh_strip -X.a
