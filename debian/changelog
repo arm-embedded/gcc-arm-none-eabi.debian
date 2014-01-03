@@ -1,3 +1,15 @@
+gcc-arm-none-eabi (5) unstable; urgency=medium
+
+  * Bumped Standard-Version to 3.9.5 (no changes required)
+  * Enable c++ support. Thanks to Karl Lenz <xorangekiller@gmail.com>
+    (Closes: #733580, #732974)
+  * Swap Maintainer by Uploaders
+  * Add Vcs* fields
+  * Enable LTO (Link Time Optimization) (Closes: #734055)
+  * Fix installchangelogs and strip targets
+
+ -- Agustin Henze <tin@debian.org>  Fri, 03 Jan 2014 14:12:31 -0300
+
 gcc-arm-none-eabi (4) unstable; urgency=low
 
   * Update patches to the new gcc version 4.8.2 (Closes: #730324)
