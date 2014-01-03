@@ -1,8 +1,8 @@
 Source: gcc-arm-none-eabi
 Section: devel
 Priority: extra
-Maintainer: Keith Packard <keithp@keithp.com>
-Uploaders: Agustin Henze <tin@debian.org>
+Maintainer: Agustin Henze <tin@debian.org>
+Uploaders: Keith Packard <keithp@keithp.com>
 Build-Depends:
  autoconf2.64,
  autogen,
@@ -28,9 +28,11 @@ Build-Depends:
  texinfo,
  xz-utils,
  zlib1g-dev,
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Homepage: http://gcc.gnu.org/
 X-Python-Version: >= 2.7
+Vcs-Git: git://anonscm.debian.org/collab-maint/gcc-arm-none-eabi.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/gcc-arm-none-eabi.git
 
 Package: gcc-arm-none-eabi
 Architecture: any
