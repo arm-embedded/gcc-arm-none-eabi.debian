@@ -1,3 +1,11 @@
+gcc-arm-none-eabi (6) unstable; urgency=medium
+
+  * Remove as and ld hardcoded. Thanks to Mateusz Kaduk (Closes: #734577)
+  * Remove interwork
+  * Add missing build dependencies
+
+ -- Agustin Henze <tin@debian.org>  Wed, 15 Jan 2014 14:07:07 -0300
+
 gcc-arm-none-eabi (5) unstable; urgency=medium
 
   * Bumped Standard-Version to 3.9.5 (no changes required)
