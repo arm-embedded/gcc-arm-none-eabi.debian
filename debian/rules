@@ -70,9 +70,7 @@ configure_flags = \
     --host=$(DEB_HOST_GNU_TYPE) \
     --target=$(target) \
     --with-gnu-as \
-    --with-as=/usr/bin/$(target)-as \
     --with-gnu-ld \
-    --with-ld=/usr/bin/$(target)-ld \
     --with-headers=no \
     --without-newlib \
     "--with-pkgversion=$(deb_version)" \
