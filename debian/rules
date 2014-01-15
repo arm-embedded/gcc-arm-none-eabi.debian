@@ -51,7 +51,6 @@ configure_flags = \
     --libexecdir=/usr/lib \
     --libdir=/usr/lib \
     --with-system-zlib \
-    --enable-interwork \
     --enable-multilib \
     --disable-decimal-float \
     --disable-libffi \
