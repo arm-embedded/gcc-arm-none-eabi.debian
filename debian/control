@@ -28,6 +28,8 @@ Build-Depends:
  texinfo,
  xz-utils,
  zlib1g-dev,
+ libisl-dev,
+ libcloog-isl-dev,
 Standards-Version: 3.9.5
 Homepage: http://gcc.gnu.org/
 X-Python-Version: >= 2.7
