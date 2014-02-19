@@ -82,10 +82,18 @@ configure_flags = \
 	dh $@ -D$(src_dir) -B$(build_dir) --with autotools-dev --parallel
 
 $(unpack_stamp): $(tar_stamp)
-	for patch in debian/patches/[0-9]*.patch; do \
-		echo Applying patch "$$patch"; \
-		patch -p1 < "$$patch"; \
-	done && touch $@
+	set -ex; \
+		for patch in debian/patches/[0-9]*.patch; do \
+			echo Applying patch "$$patch"; \
+			patch -p1 < "$$patch"; \
+		done
+	set -ex; \
+		cd $(top_dir)/$(src_dir); \
+		for patch in $(shell cat debian/debian_patches.txt); do \
+			echo Applying patch "$$patch"; \
+			patch -p2 < $(gcc_dir)/patches/$$patch; \
+		done
+	touch $@
 
 $(tar_stamp):
 	tar xf $(gcc_dir)/gcc-*.tar.*

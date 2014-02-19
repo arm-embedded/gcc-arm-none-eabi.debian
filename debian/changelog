@@ -1,3 +1,9 @@
+gcc-arm-none-eabi (7) unstable; urgency=medium
+
+  * Applying debian patches (Closes: #739009)
+
+ -- Agustin Henze <tin@debian.org>  Wed, 19 Feb 2014 19:28:54 -0300
+
 gcc-arm-none-eabi (6) unstable; urgency=medium
 
   * Remove as and ld hardcoded. Thanks to Mateusz Kaduk (Closes: #734577)
