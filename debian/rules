@@ -19,6 +19,7 @@ source_version := $(shell dpkg-query -W -f="\$${Version}\n" $(GCC_PACKAGE)-sourc
 deb_version := $(source_version)+$(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
 deb_upstream_version := $(shell echo $(deb_version) | cut -d- -f1)
 base_version := $(shell echo $(deb_version) | sed -e 's/\([1-9]\.[0-9]\).*-.*/\1/')
+BUILT_USING := $(shell dpkg-query -f '$${source:Package} (= $${source:Version}), ' -W gcc-4.8-source)
 
 upstream_dir=gcc-$(deb_upstream_version)
 

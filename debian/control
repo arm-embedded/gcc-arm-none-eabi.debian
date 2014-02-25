@@ -39,6 +39,7 @@ Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/gcc-arm-none-eabi.
 Package: gcc-arm-none-eabi
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, binutils-arm-none-eabi
+Built-Using: ${Built-Using}
 Recommends: libnewlib-arm-none-eabi
 Description: GCC cross compiler for ARM Cortex-A/R/M processors
  Bare metal compiler for embedded ARM chips using Cortex-M0/M0+/M3/M4,
