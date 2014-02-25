@@ -114,7 +114,7 @@ override_dh_auto_test:
 #	dh_auto_test -D$(src_dir) -B$(build_dir) --max-parallel=1
 
 override_dh_gencontrol:
-	dh_gencontrol -a -- -v$(deb_version) -Vlocal:Version=$(deb_upstream_version) -Vgcc:Version=$(source_version)
+	dh_gencontrol -a -- -v$(deb_version) -Vlocal:Version=$(deb_upstream_version) -Vgcc:Version=$(source_version) -VBuilt-Using="$(BUILT_USING)"
 
 override_dh_auto_install:
 	mkdir -p $(top_dir)/debian/tmp
