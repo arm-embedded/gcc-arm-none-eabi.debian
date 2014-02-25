@@ -99,6 +99,27 @@ index a4cb7c6..185f78e 100644
  ARM_CORE("cortex-m4",	  cortexm4,	7EM,				 FL_LDSCHED, cortex)
  ARM_CORE("cortex-m3",	  cortexm3,	7M,				 FL_LDSCHED, cortex)
  ARM_CORE("cortex-m1",	  cortexm1,	6M,				 FL_LDSCHED, v6m)
+diff --git a/gcc-4.8.2/gcc/configure b/gcc-4.8.1/gcc/configure
+index c1b0e46..64ddd33 100755
+--- a/gcc-4.8.2/gcc/configure
++++ b/gcc-4.8.2/gcc/configure
+@@ -753,6 +753,7 @@ LN
+ LN_S
+ AWK
+ SET_MAKE
++with_multilib_list
+ REPORT_BUGS_TEXI
+ REPORT_BUGS_TO
+ PKGVERSION
+@@ -1660,7 +1660,7 @@ Optional Packages:
+   --with-specs=SPECS      add SPECS to driver command-line processing
+   --with-pkgversion=PKG   Use PKG in the version string in place of "GCC"
+   --with-bugurl=URL       Direct users to URL to report a bug
+-  --with-multilib-list    select multilibs (SH and x86-64 only)
++  --with-multilib-list    select multilibs (ARM, SH and x86-64 only)
+   --with-gnu-ld           assume the C compiler uses GNU ld default=no
+   --with-libiconv-prefix[=DIR]  search for libiconv in DIR/include and DIR/lib
+   --without-libiconv-prefix     don't search for libiconv in includedir and libdir
 diff --git a/gcc-4.8.2/gcc/config/arm/arm-tables.opt b/gcc-4.8.1/gcc/config/arm/arm-tables.opt
 index 06a529d..ad52d18 100644
 --- a/gcc-4.8.2/gcc/config/arm/arm-tables.opt
