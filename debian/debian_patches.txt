@@ -3,5 +3,4 @@ gcc-base-version.diff
 arm-sanitizer.diff
 pr49847.diff
 fix-ffi_call_VFP-with-no-VFP-argument.diff
-libstdc++-arm-wno-abi.diff
 libffi-ro-eh_frame_sect.diff

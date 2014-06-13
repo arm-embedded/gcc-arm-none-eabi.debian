@@ -4,13 +4,13 @@ Date: Sun, 6 Oct 2013 15:23:05 -0700
 Subject: [PATCH 2/3] Ignore document errors during build
 
 ---
- gcc-4.8.2/gcc/genhooks.c | 4 ++--
+ gcc-4.8.3/gcc/genhooks.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/gcc-4.8.2/gcc/genhooks.c b/gcc-4.8.1/gcc/genhooks.c
+diff --git a/gcc-4.8.3/gcc/genhooks.c b/gcc-4.8.1/gcc/genhooks.c
 index 28bb226..179fc68 100644
---- a/gcc-4.8.2/gcc/genhooks.c
-+++ b/gcc-4.8.2/gcc/genhooks.c
+--- a/gcc-4.8.3/gcc/genhooks.c
++++ b/gcc-4.8.3/gcc/genhooks.c
 @@ -164,8 +164,8 @@ emit_documentation (const char *in_fname)
  	    fatal ("Duplicate hook %s\n", sh.name);
  	  shp->pos = i;
