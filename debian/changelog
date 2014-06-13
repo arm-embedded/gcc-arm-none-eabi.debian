@@ -1,3 +1,11 @@
+gcc-arm-none-eabi (9) unstable; urgency=medium
+
+  * Fix Built-Using field, was missing pass as parameter to dh_gencontrol
+  * Run dh-autoreconf to update config (Closes: #744575)
+  * Update patches to the new gcc version 4.8.3 (Closes: #750251)
+
+ -- Agustin Henze <tin@debian.org>  Fri, 13 Jun 2014 13:51:21 -0300
+
 gcc-arm-none-eabi (8) unstable; urgency=medium
 
   * Fix multilib, thanks Keith! :)
