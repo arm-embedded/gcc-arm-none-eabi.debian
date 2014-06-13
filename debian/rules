@@ -80,7 +80,7 @@ configure_flags = \
     $(target_tools)
 
 %:
-	dh $@ -D$(src_dir) -B$(build_dir) --with autotools-dev --parallel
+	dh $@ -D$(src_dir) -B$(build_dir) --with autotools-dev --parallel --with autoreconf
 
 $(unpack_stamp): $(tar_stamp)
 	set -ex; \
@@ -102,12 +102,16 @@ $(tar_stamp):
 	cp /usr/share/doc/$(GCC_PACKAGE)-source/copyright debian/copyright-gcc
 	touch $@
 
+override_dh_autoreconf: $(unpack_stamp)
+	autoreconf2.64 -f -i $(upstream_dir)
+
 override_dh_auto_configure: $(unpack_stamp)
 	mkdir -p $(build_dir)
 	dh_auto_configure -D$(src_dir) -B$(build_dir) -- $(configure_flags)
 
 override_dh_auto_clean:
 	rm -rf $(upstream_dir) $(build_dir) debian/tmp debian/copyright-gcc $(stampdir)
+	dh_autoreconf_clean
 
 override_dh_auto_test:
 	@echo "no testing, that's way too painful"

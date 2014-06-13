@@ -10,6 +10,7 @@ Build-Depends:
  binutils-arm-none-eabi,
  bison,
  debhelper (>= 8.0.0),
+ dh-autoreconf,
  dejagnu,
  flex,
  gawk,
