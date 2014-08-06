@@ -1,3 +1,9 @@
+gcc-arm-none-eabi (10) unstable; urgency=medium
+
+  * Rebuilt using current gcc (Closes: #751311)
+
+ -- Agustin Henze <tin@debian.org>  Wed, 06 Aug 2014 17:15:42 -0300
+
 gcc-arm-none-eabi (9) unstable; urgency=medium
 
   * Fix Built-Using field, was missing pass as parameter to dh_gencontrol

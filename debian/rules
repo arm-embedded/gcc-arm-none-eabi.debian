@@ -42,42 +42,42 @@ target_tools=\
 	STRIP_FOR_TARGET=$(target)-strip
 
 configure_flags = \
-    --enable-languages=c,c++ \
-    --prefix=/usr/lib \
-    --infodir=/usr/share/doc/$(package)/info \
-    --mandir=/usr/share/man \
-    --htmldir=/usr/share/doc/$(package)/html \
-    --pdfdir=/usr/share/doc/$(package)/pdf \
-    --bindir=/usr/bin \
-    --libexecdir=/usr/lib \
-    --libdir=/usr/lib \
-    --with-system-zlib \
-    --enable-multilib \
-    --disable-decimal-float \
-    --disable-libffi \
-    --disable-libgomp \
-    --disable-libmudflap \
-    --disable-libquadmath \
-    --disable-libssp \
-    --disable-libstdcxx-pch \
-    --disable-libstdc++-v3 \
-    --disable-nls \
-    --disable-shared \
-    --disable-threads \
-    --disable-tls \
-    --disable-plugin \
-    --build=$(DEB_BUILD_GNU_TYPE) \
-    --host=$(DEB_HOST_GNU_TYPE) \
-    --target=$(target) \
-    --with-gnu-as \
-    --with-gnu-ld \
-    --with-headers=no \
-    --without-newlib \
-    "--with-pkgversion=$(deb_version)" \
-    --without-included-gettext \
-    $(MULTILIB_LIST) \
-    $(buildflags) \
-    $(target_tools)
+	--enable-languages=c,c++ \
+	--prefix=/usr/lib \
+	--infodir=/usr/share/doc/$(package)/info \
+	--mandir=/usr/share/man \
+	--htmldir=/usr/share/doc/$(package)/html \
+	--pdfdir=/usr/share/doc/$(package)/pdf \
+	--bindir=/usr/bin \
+	--libexecdir=/usr/lib \
+	--libdir=/usr/lib \
+	--with-system-zlib \
+	--enable-multilib \
+	--disable-decimal-float \
+	--disable-libffi \
+	--disable-libgomp \
+	--disable-libmudflap \
+	--disable-libquadmath \
+	--disable-libssp \
+	--disable-libstdcxx-pch \
+	--disable-libstdc++-v3 \
+	--disable-nls \
+	--disable-shared \
+	--disable-threads \
+	--disable-tls \
+	--disable-plugin \
+	--build=$(DEB_BUILD_GNU_TYPE) \
+	--host=$(DEB_HOST_GNU_TYPE) \
+	--target=$(target) \
+	--with-gnu-as \
+	--with-gnu-ld \
+	--with-headers=no \
+	--without-newlib \
+	"--with-pkgversion=$(deb_version)" \
+	--without-included-gettext \
+	$(MULTILIB_LIST) \
+	$(buildflags) \
+	$(target_tools)
 
 %:
 	dh $@ -D$(src_dir) -B$(build_dir) --with autotools-dev --parallel --with autoreconf
