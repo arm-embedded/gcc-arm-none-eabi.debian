@@ -1,5 +1,6 @@
 gcc-arm-none-eabi (11) UNRELEASED; urgency=medium
 
+  * Enable plugin support.
   * Add myself to uploaders.
 
  -- Thomas Preud'homme <thomas.preudhomme@arm.com>  Mon, 18 Aug 2014 02:52:23 +0000
