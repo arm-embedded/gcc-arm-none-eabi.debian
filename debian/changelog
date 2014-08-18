@@ -1,5 +1,6 @@
 gcc-arm-none-eabi (11) UNRELEASED; urgency=medium
 
+  * Track GCC embedded branch.
   * Enable plugin support.
   * Add myself to uploaders.
 
