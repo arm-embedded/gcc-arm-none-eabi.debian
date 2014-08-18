@@ -1,3 +1,9 @@
+gcc-arm-none-eabi (11) UNRELEASED; urgency=medium
+
+  * Add myself to uploaders.
+
+ -- Thomas Preud'homme <thomas.preudhomme@arm.com>  Mon, 18 Aug 2014 02:52:23 +0000
+
 gcc-arm-none-eabi (10) unstable; urgency=medium
 
   * Rebuilt using current gcc (Closes: #751311)

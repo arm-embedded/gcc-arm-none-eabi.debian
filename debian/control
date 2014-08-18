@@ -2,7 +2,8 @@ Source: gcc-arm-none-eabi
 Section: devel
 Priority: extra
 Maintainer: Agustin Henze <tin@debian.org>
-Uploaders: Keith Packard <keithp@keithp.com>
+Uploaders: Keith Packard <keithp@keithp.com>,
+           Thomas Preud'homme <thomas.preudhomme@arm.com>
 Build-Depends:
  autoconf2.64,
  autogen,
