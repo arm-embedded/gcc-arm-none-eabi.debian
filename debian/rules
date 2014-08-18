@@ -122,6 +122,15 @@ override_dh_gencontrol:
 override_dh_auto_install:
 	mkdir -p $(top_dir)/debian/tmp
 	cd build && make install DESTDIR=$(top_dir)/debian/tmp
+	plugin_dir=$$(debian/tmp/usr/bin/arm-none-eabi-gcc -print-file-name=plugin); \
+		plugin_src_dirs=$$(find debian/gcc-plugins/ -mindepth 1 -maxdepth 1 -type d -name '[^\.]*'); \
+		for d in $$plugin_src_dirs; do \
+			plugin_name=$$(basename $$d); \
+			src_files=$$(find $$d -name \*.c -or -name \*.cc); \
+			g++ -fPIC -fno-rtti -O2 -shared -I $$plugin_dir/include \
+				-I $(build_dir)/host-libs/usr/include \
+				$$src_files -o $$plugin_dir/$$plugin_name.so;\
+		done
 
 override_dh_installchangelogs:
 	dh_installchangelogs $(upstream_dir)/ChangeLog
