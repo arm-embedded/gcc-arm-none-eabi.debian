@@ -3,6 +3,7 @@ gcc-arm-none-eabi (11) UNRELEASED; urgency=medium
   * Track GCC embedded branch.
   * Enable plugin support and add tree_switch_shortcut_elf plugin.
   * Add myself to uploaders.
+  * Add somes examples.
 
  -- Thomas Preud'homme <thomas.preudhomme@arm.com>  Mon, 18 Aug 2014 02:52:23 +0000
 

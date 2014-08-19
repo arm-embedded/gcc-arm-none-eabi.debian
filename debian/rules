@@ -135,5 +135,8 @@ override_dh_auto_install:
 override_dh_installchangelogs:
 	dh_installchangelogs $(upstream_dir)/ChangeLog
 
+override_dh_compress:
+	dh_compress -X.S
+
 override_dh_strip:
 	dh_strip -X.a
