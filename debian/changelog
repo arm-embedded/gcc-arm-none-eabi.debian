@@ -5,6 +5,7 @@ gcc-arm-none-eabi (11) UNRELEASED; urgency=medium
   * Add myself to uploaders.
   * Add somes examples.
   * Take build flags from dpkg-buildflags.
+  * Include upstream readme.txt in the documentation.
 
  -- Thomas Preud'homme <thomas.preudhomme@arm.com>  Mon, 18 Aug 2014 02:52:23 +0000
 
