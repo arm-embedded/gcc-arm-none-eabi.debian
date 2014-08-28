@@ -1,4 +1,4 @@
-gcc-arm-none-eabi (11) UNRELEASED; urgency=medium
+gcc-arm-none-eabi (11) unstable; urgency=medium
 
   * Track GCC embedded branch.
   * Enable plugin support and add tree_switch_shortcut_elf plugin.

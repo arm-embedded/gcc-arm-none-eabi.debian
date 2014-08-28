@@ -30,7 +30,7 @@ src_dir=$(upstream_dir)
 build_dir=build
 
 export DEB_BUILD_MAINT_OPTIONS=hardening=-format
-buildflags:=$(dpkg-buildflags --export=configure) INHIBIT_LIBC_CFLAGS="-DUSE_TM_CLONE_REGISTRY=0"
+buildflags := $(shell dpkg-buildflags --export=configure) INHIBIT_LIBC_CFLAGS="-DUSE_TM_CLONE_REGISTRY=0"
 
 target_tools=\
 	AR_FOR_TARGET=$(target)-ar \
