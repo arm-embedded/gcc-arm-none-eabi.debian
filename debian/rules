@@ -29,8 +29,8 @@ tar_stamp=$(stampdir)/tar
 src_dir=$(upstream_dir)
 build_dir=build
 
-export DEB_BUILD_MAINT_OPTIONS=hardening=-format
-buildflags := $(shell dpkg-buildflags --export=configure) INHIBIT_LIBC_CFLAGS="-DUSE_TM_CLONE_REGISTRY=0"
+export DEB_BUILD_MAINT_OPTIONS=hardening=-format,-stackprotectorstrong
+buildflags:=$(dpkg-buildflags --export=configure) INHIBIT_LIBC_CFLAGS="-DUSE_TM_CLONE_REGISTRY=0"
 
 target_tools=\
 	AR_FOR_TARGET=$(target)-ar \
@@ -128,7 +128,7 @@ override_dh_auto_install:
 		for d in $$plugin_src_dirs; do \
 			plugin_name=$$(basename $$d); \
 			src_files=$$(find $$d -name \*.c -or -name \*.cc); \
-			g++ -fPIC -fno-rtti -O2 -shared -I $$plugin_dir/include \
+			g++ $(shell dpkg-buildflags --get LDFLAGS) -fPIC -fno-rtti -O2 -shared -I $$plugin_dir/include \
 				-I $(build_dir)/host-libs/usr/include \
 				$$src_files -o $$plugin_dir/$$plugin_name.so;\
 		done
