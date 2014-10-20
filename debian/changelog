@@ -1,3 +1,10 @@
+gcc-arm-none-eabi (12) UNRELEASED; urgency=medium
+
+  * New upstream release: 4.8-2014-q3-update.
+  * Modify patching so that patches can be version independent.
+
+ -- Thomas Preud'homme <thomas.preudhomme@arm.com>  Mon, 20 Oct 2014 10:01:25 +0000
+
 gcc-arm-none-eabi (11) unstable; urgency=medium
 
   * Track GCC embedded branch.

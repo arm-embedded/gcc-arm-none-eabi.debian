@@ -84,7 +84,8 @@ configure_flags = \
 
 $(unpack_stamp): $(tar_stamp)
 	set -ex; \
-		for patch in debian/patches/[0-9]*.patch; do \
+		cd gcc-*; \
+		for patch in ../debian/patches/[0-9]*.patch; do \
 			echo Applying patch "$$patch"; \
 			patch -p1 < "$$patch"; \
 		done

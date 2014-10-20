@@ -16,7 +16,7 @@ pass USE_NANO= to make command line like:
 $ make USE_NANO=
 
 The makefile is configured to build for Cortex-M0 by default. To build for
-M3 or M4, pass CORTEX_M=3/4 respectively:
+M3, M4 or M7, pass CORTEX_M=3/4/7 respectively:
 $ make CORTEX_M=3
 
 * Porting *
