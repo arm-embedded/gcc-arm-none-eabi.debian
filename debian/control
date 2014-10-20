@@ -15,7 +15,7 @@ Build-Depends:
  dejagnu,
  flex,
  gawk,
- gcc-4.8-source,
+ gcc-4.9-source,
  gettext,
  libgmp-dev,
  libmpc-dev,

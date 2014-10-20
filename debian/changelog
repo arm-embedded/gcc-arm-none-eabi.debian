@@ -1,3 +1,17 @@
+gcc-arm-none-eabi (13) UNRELEASED; urgency=medium
+
+  * New upstream release: 4.9-2014-q4-major.
+  * Remove debian/gcc-plugins as tree-switch-shortcut is now added to GCC
+    source by GCC embedded patch.
+  * debian/debian_patches.txt: remove arm-sanitizer.diff and pr49847.diff as
+    they were applied upstream.
+  * debian/rules:
+    + remove recipe to compile tree-switch-shortcut as a plugin
+    + set major GCC version to 4.9
+  * debian/control: build-depend on gcc-4.9-source instead of gcc-4.8-source.
+
+ -- Thomas Preud'homme <thomas.preudhomme@arm.com>  Mon, 15 Dec 2014 12:46:49 +0000
+
 gcc-arm-none-eabi (12) experimental; urgency=medium
 
   [ Thomas Preud'homme ]
