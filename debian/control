@@ -32,7 +32,7 @@ Build-Depends:
  zlib1g-dev,
  libisl-dev,
  libcloog-isl-dev,
-Standards-Version: 3.9.5
+Standards-Version: 3.9.6
 Homepage: http://gcc.gnu.org/
 X-Python-Version: >= 2.7
 Vcs-Git: git://anonscm.debian.org/collab-maint/gcc-arm-none-eabi.git
