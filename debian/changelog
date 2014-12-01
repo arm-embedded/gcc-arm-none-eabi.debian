@@ -1,9 +1,13 @@
-gcc-arm-none-eabi (12) UNRELEASED; urgency=medium
+gcc-arm-none-eabi (12) experimental; urgency=medium
 
+  [ Thomas Preud'homme ]
   * New upstream release: 4.8-2014-q3-update.
   * Modify patching so that patches can be version independent.
 
- -- Thomas Preud'homme <thomas.preudhomme@arm.com>  Mon, 20 Oct 2014 10:01:25 +0000
+  [ Agustin Henze ]
+  * Bumped Standard-Version to 3.9.6 (no changes required)
+
+ -- Agustin Henze <tin@debian.org>  Mon, 01 Dec 2014 10:30:31 -0300
 
 gcc-arm-none-eabi (11) unstable; urgency=medium
 
