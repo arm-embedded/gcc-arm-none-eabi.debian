@@ -4114,24 +4114,6 @@ index 3793681..177906f 100755
  # -------------------------
  # Checks for other programs
  # -------------------------
-@@ -17838,7 +17840,7 @@ else
-   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
-   lt_status=$lt_dlunknown
-   cat > conftest.$ac_ext <<_LT_EOF
--#line 17841 "configure"
-+#line 17843 "configure"
- #include "confdefs.h"
- 
- #if HAVE_DLFCN_H
-@@ -17944,7 +17946,7 @@ else
-   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
-   lt_status=$lt_dlunknown
-   cat > conftest.$ac_ext <<_LT_EOF
--#line 17947 "configure"
-+#line 17949 "configure"
- #include "confdefs.h"
- 
- #if HAVE_DLFCN_H
 diff --git a/gcc/configure.ac b/gcc/configure.ac
 index 3ee1d67..07c127e 100644
 --- a/gcc/configure.ac
