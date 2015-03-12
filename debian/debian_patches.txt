@@ -1,4 +1,3 @@
-svn-updates.diff
 gcc-base-version.diff
 arm-sanitizer.diff
 pr49847.diff

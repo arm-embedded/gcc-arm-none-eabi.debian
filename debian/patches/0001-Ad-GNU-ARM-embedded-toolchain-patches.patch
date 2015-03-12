@@ -2,7 +2,7 @@ diff --git a/gcc/ChangeLog.arm b/gcc/ChangeLog.arm
 new file mode 100644
 index 0000000..8f04bc3
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/ChangeLog.arm
++++ b/gcc-4.8.4/gcc/ChangeLog.arm
 @@ -0,0 +1,311 @@
 +2014-02-28  Joey Ye  <joey.ye@arm.com>
 +
@@ -318,13 +318,13 @@ index 0000000..8f04bc3
 diff --git a/gcc/DEV-PHASE b/gcc/DEV-PHASE
 index 373fbc6..d702569 100644
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/DEV-PHASE
++++ b/gcc-4.8.4/gcc/DEV-PHASE
 @@ -0,0 +1,1 @@
 +release
 diff --git a/gcc/Makefile.in b/gcc/Makefile.in
 index 2a4475b..56b7baa 100644
---- a/gcc-4.8.3/gcc/Makefile.in
-+++ b/gcc-4.8.3/gcc/Makefile.in
+--- a/gcc-4.8.4/gcc/Makefile.in
++++ b/gcc-4.8.4/gcc/Makefile.in
 @@ -526,6 +526,7 @@ lang_opt_files=@lang_opt_files@ $(srcdir)/c-family/c.opt $(srcdir)/common.opt
  lang_specs_files=@lang_specs_files@
  lang_tree_files=@lang_tree_files@
@@ -337,7 +337,7 @@ diff --git a/gcc/c-family/ChangeLog.arm b/gcc/c-family/ChangeLog.arm
 new file mode 100644
 index 0000000..056bf52
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/c-family/ChangeLog.arm
++++ b/gcc-4.8.4/gcc/c-family/ChangeLog.arm
 @@ -0,0 +1,8 @@
 +2014-07-29  Terry Guo  <terry.guo@arm.com>
 +
@@ -349,8 +349,8 @@ index 0000000..056bf52
 +	* c.opt (fshort-wchar): Likewise.
 diff --git a/gcc/c-family/c.opt b/gcc/c-family/c.opt
 index 4da80b0..8dfa739 100644
---- a/gcc-4.8.3/gcc/c-family/c.opt
-+++ b/gcc-4.8.3/gcc/c-family/c.opt
+--- a/gcc-4.8.4/gcc/c-family/c.opt
++++ b/gcc-4.8.4/gcc/c-family/c.opt
 @@ -1121,11 +1121,11 @@ C ObjC C++ ObjC++ Optimization Var(flag_short_double)
  Use the same size for double as for float
  
@@ -367,8 +367,8 @@ index 4da80b0..8dfa739 100644
  fsigned-bitfields
 diff --git a/gcc/calls.c b/gcc/calls.c
 index bf0ba30..a066e52 100644
---- a/gcc-4.8.3/gcc/calls.c
-+++ b/gcc-4.8.3/gcc/calls.c
+--- a/gcc-4.8.4/gcc/calls.c
++++ b/gcc-4.8.4/gcc/calls.c
 @@ -1027,7 +1027,7 @@ store_unaligned_arguments_into_pseudos (struct arg_data *args, int num_actuals)
  	    int bitsize = MIN (bytes * BITS_PER_UNIT, BITS_PER_WORD);
  
@@ -380,8 +380,8 @@ index bf0ba30..a066e52 100644
  	    /* There is no need to restrict this code to loading items
 diff --git a/gcc/cfghooks.c b/gcc/cfghooks.c
 index 5e3eeb5..0474de7 100644
---- a/gcc-4.8.3/gcc/cfghooks.c
-+++ b/gcc-4.8.3/gcc/cfghooks.c
+--- a/gcc-4.8.4/gcc/cfghooks.c
++++ b/gcc-4.8.4/gcc/cfghooks.c
 @@ -1258,12 +1258,17 @@ end:
  
  /* Duplicates N basic blocks stored in array BBS.  Newly created basic blocks
@@ -445,8 +445,8 @@ index 5e3eeb5..0474de7 100644
  
 diff --git a/gcc/cfghooks.h b/gcc/cfghooks.h
 index bff0a0c..ec595a5 100644
---- a/gcc-4.8.3/gcc/cfghooks.h
-+++ b/gcc-4.8.3/gcc/cfghooks.h
+--- a/gcc-4.8.4/gcc/cfghooks.h
++++ b/gcc-4.8.4/gcc/cfghooks.h
 @@ -201,7 +201,7 @@ extern void lv_add_condition_to_bb (basic_block, basic_block, basic_block,
  extern bool can_copy_bbs_p (basic_block *, unsigned);
  extern void copy_bbs (basic_block *, unsigned, basic_block *,
@@ -458,8 +458,8 @@ index bff0a0c..ec595a5 100644
  
 diff --git a/gcc/cfgloopmanip.c b/gcc/cfgloopmanip.c
 index 3e53aa0..90df4f0 100644
---- a/gcc-4.8.3/gcc/cfgloopmanip.c
-+++ b/gcc-4.8.3/gcc/cfgloopmanip.c
+--- a/gcc-4.8.4/gcc/cfgloopmanip.c
++++ b/gcc-4.8.4/gcc/cfgloopmanip.c
 @@ -1297,7 +1297,7 @@ duplicate_loop_to_header_edge (struct loop *loop, edge e,
  
        /* Copy bbs.  */
@@ -471,8 +471,8 @@ index 3e53aa0..90df4f0 100644
        if (flags & DLTHE_RECORD_COPY_NUMBER)
 diff --git a/gcc/config.gcc b/gcc/config.gcc
 index 2b54dd9..16dc35a 100644
---- a/gcc-4.8.3/gcc/config.gcc
-+++ b/gcc-4.8.3/gcc/config.gcc
+--- a/gcc-4.8.4/gcc/config.gcc
++++ b/gcc-4.8.4/gcc/config.gcc
 @@ -537,7 +537,11 @@ x86_64-*-*)
  	fi
  	tm_file="vxworks-dummy.h ${tm_file}"
@@ -499,7 +499,7 @@ diff --git a/gcc/config/arm/aarch-common-protos.h b/gcc/config/arm/aarch-common-
 new file mode 100644
 index 0000000..c3652a7
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/config/arm/aarch-common-protos.h
++++ b/gcc-4.8.4/gcc/config/arm/aarch-common-protos.h
 @@ -0,0 +1,134 @@
 +/* Functions and structures shared between arm and aarch64.
 +
@@ -639,7 +639,7 @@ diff --git a/gcc/config/arm/aarch-cost-tables.h b/gcc/config/arm/aarch-cost-tabl
 new file mode 100644
 index 0000000..4b36abe
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/config/arm/aarch-cost-tables.h
++++ b/gcc-4.8.4/gcc/config/arm/aarch-cost-tables.h
 @@ -0,0 +1,126 @@
 +/* RTX cost tables shared between arm and aarch64.
 +
@@ -769,8 +769,8 @@ index 0000000..4b36abe
 +
 diff --git a/gcc/config/arm/arm-cores.def b/gcc/config/arm/arm-cores.def
 index a4cb7c6..ca282e2 100644
---- a/gcc-4.8.3/gcc/config/arm/arm-cores.def
-+++ b/gcc-4.8.3/gcc/config/arm/arm-cores.def
+--- a/gcc-4.8.4/gcc/config/arm/arm-cores.def
++++ b/gcc-4.8.4/gcc/config/arm/arm-cores.def
 @@ -132,8 +132,9 @@ ARM_CORE("cortex-a15",	  cortexa15,	7A,				 FL_LDSCHED | FL_THUMB_DIV | FL_ARM_D
  ARM_CORE("cortex-r4",	  cortexr4,	7R,				 FL_LDSCHED, cortex)
  ARM_CORE("cortex-r4f",	  cortexr4f,	7R,				 FL_LDSCHED, cortex)
@@ -785,8 +785,8 @@ index a4cb7c6..ca282e2 100644
  ARM_CORE("cortex-m0plus", cortexm0plus,	6M,				 FL_LDSCHED, v6m)
 diff --git a/gcc/config/arm/arm-protos.h b/gcc/config/arm/arm-protos.h
 index ffa00c0..6605655 100644
---- a/gcc-4.8.3/gcc/config/arm/arm-protos.h
-+++ b/gcc-4.8.3/gcc/config/arm/arm-protos.h
+--- a/gcc-4.8.4/gcc/config/arm/arm-protos.h
++++ b/gcc-4.8.4/gcc/config/arm/arm-protos.h
 @@ -125,6 +125,7 @@ extern rtx arm_gen_compare_reg (RTX_CODE, rtx, rtx, rtx);
  extern rtx arm_gen_return_addr_mask (void);
  extern void arm_reload_in_hi (rtx *);
@@ -810,8 +810,8 @@ index ffa00c0..6605655 100644
    /* Maximum number of instructions to conditionalise in
 diff --git a/gcc/config/arm/arm-tables.opt b/gcc/config/arm/arm-tables.opt
 index 06a529d..ad52d18 100644
---- a/gcc-4.8.3/gcc/config/arm/arm-tables.opt
-+++ b/gcc-4.8.3/gcc/config/arm/arm-tables.opt
+--- a/gcc-4.8.4/gcc/config/arm/arm-tables.opt
++++ b/gcc-4.8.4/gcc/config/arm/arm-tables.opt
 @@ -259,6 +259,9 @@ EnumValue
  Enum(processor_type) String(cortex-r5) Value(cortexr5)
  
@@ -824,8 +824,8 @@ index 06a529d..ad52d18 100644
  EnumValue
 diff --git a/gcc/config/arm/arm-tune.md b/gcc/config/arm/arm-tune.md
 index 26c2e1f..ac85f94 100644
---- a/gcc-4.8.3/gcc/config/arm/arm-tune.md
-+++ b/gcc-4.8.3/gcc/config/arm/arm-tune.md
+--- a/gcc-4.8.4/gcc/config/arm/arm-tune.md
++++ b/gcc-4.8.4/gcc/config/arm/arm-tune.md
 @@ -1,5 +1,5 @@
  ;; -*- buffer-read-only: t -*-
  ;; Generated automatically by gentune.sh from arm-cores.def
@@ -835,8 +835,8 @@ index 26c2e1f..ac85f94 100644
  	(const (symbol_ref "((enum attr_tune) arm_tune)")))
 diff --git a/gcc/config/arm/arm.c b/gcc/config/arm/arm.c
 index e42d0b9..74f7dca 100644
---- a/gcc-4.8.3/gcc/config/arm/arm.c
-+++ b/gcc-4.8.3/gcc/config/arm/arm.c
+--- a/gcc-4.8.4/gcc/config/arm/arm.c
++++ b/gcc-4.8.4/gcc/config/arm/arm.c
 @@ -264,6 +264,7 @@ static reg_class_t arm_preferred_rename_class (reg_class_t rclass);
  static unsigned int arm_autovectorize_vector_sizes (void);
  static int arm_default_branch_cost (bool, bool);
@@ -3373,8 +3373,8 @@ index e42d0b9..74f7dca 100644
  	  cfun->machine->far_jump_used = 1;
 diff --git a/gcc/config/arm/arm.h b/gcc/config/arm/arm.h
 index 63fa3c1..8b15206 100644
---- a/gcc-4.8.3/gcc/config/arm/arm.h
-+++ b/gcc-4.8.3/gcc/config/arm/arm.h
+--- a/gcc-4.8.4/gcc/config/arm/arm.h
++++ b/gcc-4.8.4/gcc/config/arm/arm.h
 @@ -324,7 +324,9 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
  
  /* Should MOVW/MOVT be used in preference to a constant pool.  */
@@ -3411,8 +3411,8 @@ index 63fa3c1..8b15206 100644
  
 diff --git a/gcc/config/arm/arm.md b/gcc/config/arm/arm.md
 index 9050ec8..fd10ce8 100644
---- a/gcc-4.8.3/gcc/config/arm/arm.md
-+++ b/gcc-4.8.3/gcc/config/arm/arm.md
+--- a/gcc-4.8.4/gcc/config/arm/arm.md
++++ b/gcc-4.8.4/gcc/config/arm/arm.md
 @@ -63,6 +63,122 @@
  ;; Processor type.  This is created automatically from arm-cores.def.
  (include "arm-tune.md")
@@ -3742,8 +3742,8 @@ index 9050ec8..fd10ce8 100644
  ;; and lo_sum would be merged back into memory load at cprop.  However,
 diff --git a/gcc/config/arm/arm.opt b/gcc/config/arm/arm.opt
 index e778407..ff50283 100644
---- a/gcc-4.8.3/gcc/config/arm/arm.opt
-+++ b/gcc-4.8.3/gcc/config/arm/arm.opt
+--- a/gcc-4.8.4/gcc/config/arm/arm.opt
++++ b/gcc-4.8.4/gcc/config/arm/arm.opt
 @@ -154,6 +154,10 @@ mlong-calls
  Target Report Mask(LONG_CALLS)
  Generate call insns as indirect calls, if necessary
@@ -3781,8 +3781,8 @@ index e778407..ff50283 100644
  Enable unaligned word and halfword accesses to packed data.
 diff --git a/gcc/config/arm/cortex-m4-fpu.md b/gcc/config/arm/cortex-m4-fpu.md
 index a1945be..4ce3f10 100644
---- a/gcc-4.8.3/gcc/config/arm/cortex-m4-fpu.md
-+++ b/gcc-4.8.3/gcc/config/arm/cortex-m4-fpu.md
+--- a/gcc-4.8.4/gcc/config/arm/cortex-m4-fpu.md
++++ b/gcc-4.8.4/gcc/config/arm/cortex-m4-fpu.md
 @@ -18,10 +18,14 @@
  ;; along with GCC; see the file COPYING3.  If not see
  ;; <http://www.gnu.org/licenses/>.
@@ -3832,8 +3832,8 @@ index a1945be..4ce3f10 100644
    (and (eq_attr "tune" "cortexm4")
 diff --git a/gcc/config/arm/cortex-m4.md b/gcc/config/arm/cortex-m4.md
 index 187867b..47b0364 100644
---- a/gcc-4.8.3/gcc/config/arm/cortex-m4.md
-+++ b/gcc-4.8.3/gcc/config/arm/cortex-m4.md
+--- a/gcc-4.8.4/gcc/config/arm/cortex-m4.md
++++ b/gcc-4.8.4/gcc/config/arm/cortex-m4.md
 @@ -84,6 +84,10 @@
         (eq_attr "type" "store4"))
    "cortex_m4_ex*5")
@@ -3849,7 +3849,7 @@ diff --git a/gcc/config/arm/t-mlibs b/gcc/config/arm/t-mlibs
 new file mode 100644
 index 0000000..c02118a
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/config/arm/t-mlibs
++++ b/gcc-4.8.4/gcc/config/arm/t-mlibs
 @@ -0,0 +1,86 @@
 +# A set of predefined MULTILIB which can be used for different ARM targets.
 +# Via the configure option --with-multilib-list, user can customize the
@@ -3939,8 +3939,8 @@ index 0000000..c02118a
 +endif
 diff --git a/gcc/config/tilegx/tilegx.c b/gcc/config/tilegx/tilegx.c
 index 502b953..be93a69 100644
---- a/gcc-4.8.3/gcc/config/tilegx/tilegx.c
-+++ b/gcc-4.8.3/gcc/config/tilegx/tilegx.c
+--- a/gcc-4.8.4/gcc/config/tilegx/tilegx.c
++++ b/gcc-4.8.4/gcc/config/tilegx/tilegx.c
 @@ -1882,7 +1882,7 @@ tilegx_expand_unaligned_load (rtx dest_reg, rtx mem, HOST_WIDE_INT bitsize,
        rtx extracted =
  	extract_bit_field (gen_lowpart (DImode, wide_result),
@@ -3952,8 +3952,8 @@ index 502b953..be93a69 100644
        if (extracted != dest_reg)
 diff --git a/gcc/config/tilepro/tilepro.c b/gcc/config/tilepro/tilepro.c
 index 957146d..42ce1c7 100644
---- a/gcc-4.8.3/gcc/config/tilepro/tilepro.c
-+++ b/gcc-4.8.3/gcc/config/tilepro/tilepro.c
+--- a/gcc-4.8.4/gcc/config/tilepro/tilepro.c
++++ b/gcc-4.8.4/gcc/config/tilepro/tilepro.c
 @@ -1676,7 +1676,7 @@ tilepro_expand_unaligned_load (rtx dest_reg, rtx mem, HOST_WIDE_INT bitsize,
        rtx extracted =
  	extract_bit_field (gen_lowpart (SImode, wide_result),
@@ -3965,8 +3965,8 @@ index 957146d..42ce1c7 100644
        if (extracted != dest_reg)
 diff --git a/gcc/configure b/gcc/configure
 index 3793681..177906f 100755
---- a/gcc-4.8.3/gcc/configure
-+++ b/gcc-4.8.3/gcc/configure
+--- a/gcc-4.8.4/gcc/configure
++++ b/gcc-4.8.4/gcc/configure
 @@ -753,6 +753,7 @@ LN
  LN_S
  AWK
@@ -3984,36 +3984,10 @@ index 3793681..177906f 100755
    --with-gnu-ld           assume the C compiler uses GNU ld default=no
    --with-libiconv-prefix[=DIR]  search for libiconv in DIR/include and DIR/lib
    --without-libiconv-prefix     don't search for libiconv in includedir and libdir
-@@ -7397,6 +7398,7 @@ else
- fi
- 
- 
-+
- # -------------------------
- # Checks for other programs
- # -------------------------
-@@ -17838,7 +17840,7 @@ else
-   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
-   lt_status=$lt_dlunknown
-   cat > conftest.$ac_ext <<_LT_EOF
--#line 17841 "configure"
-+#line 17843 "configure"
- #include "confdefs.h"
- 
- #if HAVE_DLFCN_H
-@@ -17944,7 +17946,7 @@ else
-   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
-   lt_status=$lt_dlunknown
-   cat > conftest.$ac_ext <<_LT_EOF
--#line 17947 "configure"
-+#line 17949 "configure"
- #include "confdefs.h"
- 
- #if HAVE_DLFCN_H
 diff --git a/gcc/configure.ac b/gcc/configure.ac
 index 3ee1d67..07c127e 100644
---- a/gcc-4.8.3/gcc/configure.ac
-+++ b/gcc-4.8.3/gcc/configure.ac
+--- a/gcc-4.8.4/gcc/configure.ac
++++ b/gcc-4.8.4/gcc/configure.ac
 @@ -839,9 +839,10 @@ esac],
  [enable_languages=c])
  
@@ -4028,8 +4002,8 @@ index 3ee1d67..07c127e 100644
  # Checks for other programs
 diff --git a/gcc/expmed.c b/gcc/expmed.c
 index 8a6e4b9..9aa3326 100644
---- a/gcc-4.8.3/gcc/expmed.c
-+++ b/gcc-4.8.3/gcc/expmed.c
+--- a/gcc-4.8.4/gcc/expmed.c
++++ b/gcc-4.8.4/gcc/expmed.c
 @@ -47,6 +47,9 @@ static void store_fixed_bit_field (rtx, unsigned HOST_WIDE_INT,
  				   unsigned HOST_WIDE_INT,
  				   unsigned HOST_WIDE_INT,
@@ -4516,8 +4490,8 @@ index 8a6e4b9..9aa3326 100644
        /* Shift this part into place for the result.  */
 diff --git a/gcc/expr.c b/gcc/expr.c
 index 01697e9..94b3238 100644
---- a/gcc-4.8.3/gcc/expr.c
-+++ b/gcc-4.8.3/gcc/expr.c
+--- a/gcc-4.8.4/gcc/expr.c
++++ b/gcc-4.8.4/gcc/expr.c
 @@ -1704,7 +1704,7 @@ emit_group_load_1 (rtx *tmps, rtx dst, rtx orig_src, tree type, int ssize)
  		  && (!REG_P (tmps[i]) || GET_MODE (tmps[i]) != mode))
  		tmps[i] = extract_bit_field (tmps[i], bytelen * BITS_PER_UNIT,
@@ -4680,8 +4654,8 @@ index 01697e9..94b3238 100644
  				     ext_mode, ext_mode);
 diff --git a/gcc/expr.h b/gcc/expr.h
 index 98c9dae..0b36638 100644
---- a/gcc-4.8.3/gcc/expr.h
-+++ b/gcc-4.8.3/gcc/expr.h
+--- a/gcc-4.8.4/gcc/expr.h
++++ b/gcc-4.8.4/gcc/expr.h
 @@ -704,7 +704,7 @@ extern void store_bit_field (rtx, unsigned HOST_WIDE_INT,
  			     unsigned HOST_WIDE_INT,
  			     enum machine_mode, rtx);
@@ -4693,8 +4667,8 @@ index 98c9dae..0b36638 100644
  extern rtx expand_mult (enum machine_mode, rtx, rtx, rtx, int);
 diff --git a/gcc/gimple.h b/gcc/gimple.h
 index 4985446..bf659d9 100644
---- a/gcc-4.8.3/gcc/gimple.h
-+++ b/gcc-4.8.3/gcc/gimple.h
+--- a/gcc-4.8.4/gcc/gimple.h
++++ b/gcc-4.8.4/gcc/gimple.h
 @@ -1036,6 +1036,9 @@ extern tree tree_ssa_strip_useless_type_conversions (tree);
  extern bool useless_type_conversion_p (tree, tree);
  extern bool types_compatible_p (tree, tree);
@@ -4709,7 +4683,7 @@ diff --git a/gcc/testsuite/ChangeLog.arm b/gcc/testsuite/ChangeLog.arm
 new file mode 100644
 index 0000000..14305a5
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/ChangeLog.arm
++++ b/gcc-4.8.4/gcc/testsuite/ChangeLog.arm
 @@ -0,0 +1,89 @@
 +2014-07-29  Terry Guo  <terry.guo@arm.com>
 +
@@ -4804,7 +4778,7 @@ diff --git a/gcc/testsuite/gcc.c-torture/compile/pr59134.c b/gcc/testsuite/gcc.c
 new file mode 100644
 index 0000000..5268805
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.c-torture/compile/pr59134.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.c-torture/compile/pr59134.c
 @@ -0,0 +1,16 @@
 +/* { dg-do compile } */
 +
@@ -4826,7 +4800,7 @@ diff --git a/gcc/testsuite/gcc.dg/pr23623.c b/gcc/testsuite/gcc.dg/pr23623.c
 new file mode 100644
 index 0000000..c844f94
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.dg/pr23623.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.dg/pr23623.c
 @@ -0,0 +1,48 @@
 +/* { dg-do compile } */
 +/* { dg-options "-fstrict-volatile-bitfields -fdump-rtl-final" } */
@@ -4880,7 +4854,7 @@ diff --git a/gcc/testsuite/gcc.dg/pr48784-1.c b/gcc/testsuite/gcc.dg/pr48784-1.c
 new file mode 100644
 index 0000000..bbcad9b
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.dg/pr48784-1.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.dg/pr48784-1.c
 @@ -0,0 +1,18 @@
 +/* { dg-do run } */
 +/* { dg-options "-fstrict-volatile-bitfields" } */
@@ -4904,7 +4878,7 @@ diff --git a/gcc/testsuite/gcc.dg/pr48784-2.c b/gcc/testsuite/gcc.dg/pr48784-2.c
 new file mode 100644
 index 0000000..6d53263
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.dg/pr48784-2.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.dg/pr48784-2.c
 @@ -0,0 +1,18 @@
 +/* { dg-do run } */
 +/* { dg-options "-fno-strict-volatile-bitfields" } */
@@ -4928,7 +4902,7 @@ diff --git a/gcc/testsuite/gcc.dg/pr56341-1.c b/gcc/testsuite/gcc.dg/pr56341-1.c
 new file mode 100644
 index 0000000..91cf80b
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.dg/pr56341-1.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.dg/pr56341-1.c
 @@ -0,0 +1,40 @@
 +/* { dg-do run } */
 +/* { dg-options "-fstrict-volatile-bitfields" } */
@@ -4974,7 +4948,7 @@ diff --git a/gcc/testsuite/gcc.dg/pr56341-2.c b/gcc/testsuite/gcc.dg/pr56341-2.c
 new file mode 100644
 index 0000000..e6f6569
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.dg/pr56341-2.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.dg/pr56341-2.c
 @@ -0,0 +1,40 @@
 +/* { dg-do run } */
 +/* { dg-options "-fno-strict-volatile-bitfields" } */
@@ -5020,7 +4994,7 @@ diff --git a/gcc/testsuite/gcc.dg/pr56997-1.c b/gcc/testsuite/gcc.dg/pr56997-1.c
 new file mode 100644
 index 0000000..42458a1
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.dg/pr56997-1.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.dg/pr56997-1.c
 @@ -0,0 +1,44 @@
 +/* Test volatile access to unaligned field.  */
 +/* { dg-do run } */
@@ -5070,7 +5044,7 @@ diff --git a/gcc/testsuite/gcc.dg/pr56997-2.c b/gcc/testsuite/gcc.dg/pr56997-2.c
 new file mode 100644
 index 0000000..08e6311
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.dg/pr56997-2.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.dg/pr56997-2.c
 @@ -0,0 +1,44 @@
 +/* Test volatile access to unaligned field.  */
 +/* { dg-do run } */
@@ -5120,7 +5094,7 @@ diff --git a/gcc/testsuite/gcc.dg/pr56997-3.c b/gcc/testsuite/gcc.dg/pr56997-3.c
 new file mode 100644
 index 0000000..3754b10
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.dg/pr56997-3.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.dg/pr56997-3.c
 @@ -0,0 +1,44 @@
 +/* Test volatile access to unaligned field.  */
 +/* { dg-do run } */
@@ -5170,7 +5144,7 @@ diff --git a/gcc/testsuite/gcc.dg/tree-ssa/coalesce-1.c b/gcc/testsuite/gcc.dg/t
 new file mode 100644
 index 0000000..5cae9ae
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.dg/tree-ssa/coalesce-1.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.dg/tree-ssa/coalesce-1.c
 @@ -0,0 +1,195 @@
 +/* { dg-do compile } */
 +
@@ -5369,8 +5343,8 @@ index 0000000..5cae9ae
 +
 diff --git a/gcc/testsuite/gcc.dg/tree-ssa/vrp47.c b/gcc/testsuite/gcc.dg/tree-ssa/vrp47.c
 index bf4f0f3..bda9fd5 100644
---- a/gcc-4.8.3/gcc/testsuite/gcc.dg/tree-ssa/vrp47.c
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.dg/tree-ssa/vrp47.c
+--- a/gcc-4.8.4/gcc/testsuite/gcc.dg/tree-ssa/vrp47.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.dg/tree-ssa/vrp47.c
 @@ -6,10 +6,10 @@
  /* { dg-do compile { target { ! "mips*-*-* s390*-*-*  avr-*-* mn10300-*-*" } } } */
  /* { dg-options "-O2 -fdump-tree-vrp1 -fdump-tree-dom1 -fdump-tree-dom2" } */
@@ -5388,7 +5362,7 @@ diff --git a/gcc/testsuite/gcc.target/arm/lto/lto.exp b/gcc/testsuite/gcc.target
 new file mode 100644
 index 0000000..7513411
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.target/arm/lto/lto.exp
++++ b/gcc-4.8.4/gcc/testsuite/gcc.target/arm/lto/lto.exp
 @@ -0,0 +1,59 @@
 +# Copyright (C) 2009-2014 Free Software Foundation, Inc.
 +
@@ -5453,7 +5427,7 @@ diff --git a/gcc/testsuite/gcc.target/arm/lto/pr61123-enum-size_0.c b/gcc/testsu
 new file mode 100644
 index 0000000..c23f9d8
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.target/arm/lto/pr61123-enum-size_0.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.target/arm/lto/pr61123-enum-size_0.c
 @@ -0,0 +1,22 @@
 +/* { dg-lto-do link } */
 +/* { dg-lto-options { { -fno-short-enums -Wl,-Ur,--no-enum-size-warning -Os -nostdlib -flto } } } */
@@ -5481,7 +5455,7 @@ diff --git a/gcc/testsuite/gcc.target/arm/lto/pr61123-enum-size_1.c b/gcc/testsu
 new file mode 100644
 index 0000000..9561efa
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.target/arm/lto/pr61123-enum-size_1.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.target/arm/lto/pr61123-enum-size_1.c
 @@ -0,0 +1,5 @@
 +int
 +foo2 (int y)
@@ -5492,7 +5466,7 @@ diff --git a/gcc/testsuite/gcc.target/arm/thumb1-far-jump-1.c b/gcc/testsuite/gc
 new file mode 100644
 index 0000000..eb16d2f
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.target/arm/thumb1-far-jump-1.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.target/arm/thumb1-far-jump-1.c
 @@ -0,0 +1,34 @@
 +/* Check for thumb1 far jump. Shouldn't save lr for small leaf functions
 + * even with a branch in it.  */
@@ -5532,7 +5506,7 @@ diff --git a/gcc/testsuite/gcc.target/arm/thumb1-far-jump-2.c b/gcc/testsuite/gc
 new file mode 100644
 index 0000000..c6878f8
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.target/arm/thumb1-far-jump-2.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.target/arm/thumb1-far-jump-2.c
 @@ -0,0 +1,57 @@
 +/* Check for thumb1 far jump. This is the extreme case that far jump
 + * will be used with minimum number of instructions. By passing this case
@@ -5595,7 +5569,7 @@ diff --git a/gcc/testsuite/gcc.target/arm/thumb1-far-jump-3.c b/gcc/testsuite/gc
 new file mode 100644
 index 0000000..1b1c717
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.target/arm/thumb1-far-jump-3.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.target/arm/thumb1-far-jump-3.c
 @@ -0,0 +1,105 @@
 +/* Catch reload ICE on target thumb1 with far jump optimization.
 + * It is also a valid case for non-thumb1 target.  */
@@ -5706,7 +5680,7 @@ diff --git a/gcc/testsuite/gcc.target/arm/thumb2-slow-flash-data.c b/gcc/testsui
 new file mode 100644
 index 0000000..9852ea5
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gcc.target/arm/thumb2-slow-flash-data.c
++++ b/gcc-4.8.4/gcc/testsuite/gcc.target/arm/thumb2-slow-flash-data.c
 @@ -0,0 +1,74 @@
 +/* The option -mslow-flash-data is just for performance tuning, it
 +   doesn't totally disable the use of literal pools.  But for below
@@ -5786,7 +5760,7 @@ diff --git a/gcc/testsuite/gnat.dg/misaligned_volatile.adb b/gcc/testsuite/gnat.
 new file mode 100644
 index 0000000..c76975b
 --- /dev/null
-+++ b/gcc-4.8.3/gcc/testsuite/gnat.dg/misaligned_volatile.adb
++++ b/gcc-4.8.4/gcc/testsuite/gnat.dg/misaligned_volatile.adb
 @@ -0,0 +1,28 @@
 +-- { dg-do run }
 +-- { dg-options "-gnatp -fstrict-volatile-bitfields" }
@@ -5818,8 +5792,8 @@ index 0000000..c76975b
 +end;
 diff --git a/gcc/testsuite/lib/lto.exp b/gcc/testsuite/lib/lto.exp
 index 8c2db33..b2e3fde 100644
---- a/gcc-4.8.3/gcc/testsuite/lib/lto.exp
-+++ b/gcc-4.8.3/gcc/testsuite/lib/lto.exp
+--- a/gcc-4.8.4/gcc/testsuite/lib/lto.exp
++++ b/gcc-4.8.4/gcc/testsuite/lib/lto.exp
 @@ -633,3 +633,82 @@ proc scan-symbol { args } {
  	fail "scan-symbol $args"
      }
@@ -5905,8 +5879,8 @@ index 8c2db33..b2e3fde 100644
 +
 diff --git a/gcc/trans-mem.c b/gcc/trans-mem.c
 index b0f18b5..1b0b088 100644
---- a/gcc-4.8.3/gcc/trans-mem.c
-+++ b/gcc-4.8.3/gcc/trans-mem.c
+--- a/gcc-4.8.4/gcc/trans-mem.c
++++ b/gcc-4.8.4/gcc/trans-mem.c
 @@ -3941,7 +3941,8 @@ ipa_uninstrument_transaction (struct tm_region *region,
    int n = queue.length ();
    basic_block *new_bbs = XNEWVEC (basic_block, n);
@@ -5919,8 +5893,8 @@ index b0f18b5..1b0b088 100644
  
 diff --git a/gcc/tree-cfg.c b/gcc/tree-cfg.c
 index b32da2e..9d8014d 100644
---- a/gcc-4.8.3/gcc/tree-cfg.c
-+++ b/gcc-4.8.3/gcc/tree-cfg.c
+--- a/gcc-4.8.4/gcc/tree-cfg.c
++++ b/gcc-4.8.4/gcc/tree-cfg.c
 @@ -5620,16 +5620,19 @@ add_phi_args_after_copy (basic_block *region_copy, unsigned n_region,
     inside region is live over the other exit edges of the region.  All entry
     edges to the region must go to ENTRY->dest.  The edge ENTRY is redirected
@@ -6003,8 +5977,8 @@ index b32da2e..9d8014d 100644
        scale_bbs_frequencies_gcov_type (region, n_region,
 diff --git a/gcc/tree-flow.h b/gcc/tree-flow.h
 index e0aef5b..b6af4cc 100644
---- a/gcc-4.8.3/gcc/tree-flow.h
-+++ b/gcc-4.8.3/gcc/tree-flow.h
+--- a/gcc-4.8.4/gcc/tree-flow.h
++++ b/gcc-4.8.4/gcc/tree-flow.h
 @@ -397,7 +397,7 @@ extern void verify_gimple_in_cfg (struct function *);
  extern tree gimple_block_label (basic_block);
  extern void extract_true_false_edges_from_block (basic_block, edge *, edge *);
@@ -6016,8 +5990,8 @@ index e0aef5b..b6af4cc 100644
  extern void gather_blocks_in_sese_region (basic_block entry, basic_block exit,
 diff --git a/gcc/tree-ssa-coalesce.c b/gcc/tree-ssa-coalesce.c
 index fd9c2cb..1fada6a 100644
---- a/gcc-4.8.3/gcc/tree-ssa-coalesce.c
-+++ b/gcc-4.8.3/gcc/tree-ssa-coalesce.c
+--- a/gcc-4.8.4/gcc/tree-ssa-coalesce.c
++++ b/gcc-4.8.4/gcc/tree-ssa-coalesce.c
 @@ -979,8 +979,7 @@ create_outofssa_var_map (coalesce_list_p cl, bitmap used_in_copy)
  		continue;
  
@@ -6109,8 +6083,8 @@ index fd9c2cb..1fada6a 100644
 +}
 diff --git a/gcc/tree-ssa-live.c b/gcc/tree-ssa-live.c
 index 8456d7a..8794569 100644
---- a/gcc-4.8.3/gcc/tree-ssa-live.c
-+++ b/gcc-4.8.3/gcc/tree-ssa-live.c
+--- a/gcc-4.8.4/gcc/tree-ssa-live.c
++++ b/gcc-4.8.4/gcc/tree-ssa-live.c
 @@ -88,8 +88,12 @@ var_map_base_init (var_map map)
  	   as it restricts the sets we compute conflicts for.
  	   Using TREE_TYPE to generate sets is the easies as
@@ -6128,8 +6102,8 @@ index 8456d7a..8794569 100644
  						      m, INSERT);
 diff --git a/gcc/tree-ssa-loop-ch.c b/gcc/tree-ssa-loop-ch.c
 index b8dd1a3..82e14e6 100644
---- a/gcc-4.8.3/gcc/tree-ssa-loop-ch.c
-+++ b/gcc-4.8.3/gcc/tree-ssa-loop-ch.c
+--- a/gcc-4.8.4/gcc/tree-ssa-loop-ch.c
++++ b/gcc-4.8.4/gcc/tree-ssa-loop-ch.c
 @@ -197,7 +197,8 @@ copy_loop_headers (void)
        entry = loop_preheader_edge (loop);
  
@@ -6142,8 +6116,8 @@ index b8dd1a3..82e14e6 100644
  	  continue;
 diff --git a/gcc/tree-ssa-uncprop.c b/gcc/tree-ssa-uncprop.c
 index c7eed9e..318985f 100644
---- a/gcc-4.8.3/gcc/tree-ssa-uncprop.c
-+++ b/gcc-4.8.3/gcc/tree-ssa-uncprop.c
+--- a/gcc-4.8.4/gcc/tree-ssa-uncprop.c
++++ b/gcc-4.8.4/gcc/tree-ssa-uncprop.c
 @@ -466,12 +466,11 @@ uncprop_into_successor_phis (basic_block bb)
  	  struct equiv_hash_elt equiv_hash_elt;
  	  void **slot;
@@ -6182,8 +6156,8 @@ index c7eed9e..318985f 100644
  		      break;
 diff --git a/gcc/tree-vect-loop-manip.c b/gcc/tree-vect-loop-manip.c
 index 559f6e9..64271a0 100644
---- a/gcc-4.8.3/gcc/tree-vect-loop-manip.c
-+++ b/gcc-4.8.3/gcc/tree-vect-loop-manip.c
+--- a/gcc-4.8.4/gcc/tree-vect-loop-manip.c
++++ b/gcc-4.8.4/gcc/tree-vect-loop-manip.c
 @@ -735,7 +735,7 @@ slpeel_tree_duplicate_loop_to_edge_cfg (struct loop *loop, edge e)
  
    copy_bbs (bbs, loop->num_nodes + 1, new_bbs,
@@ -6197,7 +6171,7 @@ diff --git a/libcpp/ChangeLog.arm b/libcpp/ChangeLog.arm
 new file mode 100644
 index 0000000..b8cff8a
 --- /dev/null
-+++ b/gcc-4.8.3/libcpp/ChangeLog.arm
++++ b/gcc-4.8.4/libcpp/ChangeLog.arm
 @@ -0,0 +1,8 @@
 +2014-05-29  Terry Guo  <terry.guo@arm.com>
 +
@@ -6209,8 +6183,8 @@ index 0000000..b8cff8a
 +	* init.c (ENABLE_CANONICAL_SYSTEM_HEADERS): Default enabled for DOS.
 diff --git a/libcpp/files.c b/libcpp/files.c
 index ea91b02..18b8895 100644
---- a/gcc-4.8.3/libcpp/files.c
-+++ b/gcc-4.8.3/libcpp/files.c
+--- a/gcc-4.8.4/libcpp/files.c
++++ b/gcc-4.8.4/libcpp/files.c
 @@ -387,8 +387,14 @@ find_file_in_dir (cpp_reader *pfile, _cpp_file *file, bool *invalid_pch)
        char *copy;
        void **pp;
@@ -6230,8 +6204,8 @@ index ea91b02..18b8895 100644
  	  if (canonical_path)
 diff --git a/libcpp/init.c b/libcpp/init.c
 index 3037ecd..4444040 100644
---- a/gcc-4.8.3/libcpp/init.c
-+++ b/gcc-4.8.3/libcpp/init.c
+--- a/gcc-4.8.4/libcpp/init.c
++++ b/gcc-4.8.4/libcpp/init.c
 @@ -27,8 +27,12 @@ along with this program; see the file COPYING3.  If not see
  #include "filenames.h"
  
