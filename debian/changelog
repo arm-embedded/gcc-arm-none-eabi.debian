@@ -1,3 +1,10 @@
+gcc-arm-none-eabi (11-1) unstable; urgency=medium
+
+  * Update patches to 4.8.4 version (Closes: #775425)
+  * Set src_volatile on ASM_OPERANDS in PARALLEL (Closes: #760911).
+
+ -- Agustin Henze <tin@debian.org>  Thu, 12 Mar 2015 09:12:07 -0300
+
 gcc-arm-none-eabi (11) unstable; urgency=medium
 
   * Track GCC embedded branch.
