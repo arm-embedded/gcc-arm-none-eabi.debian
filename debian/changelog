@@ -1,3 +1,12 @@
+gcc-arm-none-eabi (14) unstable; urgency=medium
+
+  * Update 0001-Add-GNU-ARM-embedded-toolchain-patches.patch to embedded 4.9
+    branch
+  * Add big endian multilib support
+  * Switch to dpkg-source 3.0 (native) format
+
+ -- Agustin Henze <tin@debian.org>  Thu, 21 May 2015 09:01:08 -0300
+
 gcc-arm-none-eabi (13) experimental; urgency=medium
 
   [ Thomas Preud'homme ]
