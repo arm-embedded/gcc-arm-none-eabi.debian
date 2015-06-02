@@ -1,3 +1,9 @@
+gcc-arm-none-eabi (14~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Agustin Henze <tin@debian.org>  Thu, 21 May 2015 18:28:36 -0300
+
 gcc-arm-none-eabi (14) unstable; urgency=medium
 
   * Update 0001-Add-GNU-ARM-embedded-toolchain-patches.patch to embedded 4.9
