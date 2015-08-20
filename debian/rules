@@ -10,23 +10,11 @@ GCC_PACKAGE=gcc-$(GCC_VERSION)
 
 package=gcc-arm-none-eabi
 top_dir=$(shell pwd)
-gcc_dir=/usr/src/$(GCC_PACKAGE)
-doc_dir=/usr/share/doc/$(package)
-build_doc_dir=$(top_dir)/debian/$(package)$(doc_dir)
-stampdir=debian/stamp
 
-source_version := $(shell dpkg-query -W -f="\$${Version}\n" $(GCC_PACKAGE)-source)
-deb_version := $(source_version)+$(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
+deb_version := $(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
 deb_upstream_version := $(shell echo $(deb_version) | cut -d- -f1)
 base_version := $(shell echo $(deb_version) | sed -e 's/\([1-9]\.[0-9]\).*-.*/\1/')
-BUILT_USING := $(shell dpkg-query -f '$${source:Package} (= $${source:Version}), ' -W $(GCC_PACKAGE)-source)
-
-upstream_dir=gcc-$(deb_upstream_version)
-
-unpack_stamp=$(stampdir)/unpack
-tar_stamp=$(stampdir)/tar
-
-src_dir=$(upstream_dir)
+svn_revision := $(shell echo $(deb_version) | grep -oP "svn\K([0-9]+)")
 build_dir=build
 
 export DEB_BUILD_MAINT_OPTIONS=hardening=-format
@@ -80,50 +68,26 @@ configure_flags = \
 	$(target_tools)
 
 %:
-	dh $@ -D$(src_dir) -B$(build_dir) --with autotools-dev --parallel --with autoreconf
+	dh $@ -B$(build_dir) --with autotools-dev --parallel --with autoreconf
 
-$(unpack_stamp): $(tar_stamp)
-	set -ex; \
-		cd $(top_dir)/$(src_dir); \
-		for patch in $(shell cat debian/debian_patches.txt); do \
-			echo Applying patch "$$patch"; \
-			patch -p2 < $(gcc_dir)/patches/$$patch; \
-		done
-	set -ex; \
-		cd gcc-*; \
-		for patch in ../debian/patches/[0-9]*.patch; do \
-			echo Applying patch "$$patch"; \
-			patch -p1 < "$$patch"; \
-		done
-	touch $@
-
-$(tar_stamp):
-	tar xf $(gcc_dir)/gcc-*.tar.*
-	mkdir -p $(stampdir)
-	cp /usr/share/doc/$(GCC_PACKAGE)-source/copyright debian/copyright-gcc
-	touch $@
-
-override_dh_autoreconf: $(unpack_stamp)
+override_dh_autoreconf:
 	autoreconf2.64 -f -i $(upstream_dir)
 
 override_dh_auto_configure: $(unpack_stamp)
 	mkdir -p $(build_dir)
-	dh_auto_configure -D$(src_dir) -B$(build_dir) -- $(configure_flags)
+	dh_auto_configure -B$(build_dir) -- $(configure_flags)
 
 override_dh_auto_clean:
-	rm -rf $(upstream_dir) $(build_dir) debian/tmp debian/copyright-gcc $(stampdir)
+	rm -rf $(build_dir)
 	dh_autoreconf_clean
 
 override_dh_auto_test:
 	@echo "no testing, that's way too painful"
-#	dh_auto_test -D$(src_dir) -B$(build_dir) --max-parallel=1
+#	dh_auto_test -B$(build_dir) --max-parallel=1
 
-override_dh_gencontrol:
-	dh_gencontrol -a -- -v$(deb_version) -Vlocal:Version=$(deb_upstream_version) -Vgcc:Version=$(source_version) -VBuilt-Using="$(BUILT_USING)"
-
-override_dh_auto_install:
-	mkdir -p $(top_dir)/debian/tmp
-	cd build && make install DESTDIR=$(top_dir)/debian/tmp
+#override_dh_auto_install:
+	#mkdir -p $(top_dir)/debian/tmp
+	#cd build && make install DESTDIR=$(top_dir)/debian/tmp
 
 override_dh_installchangelogs:
 	dh_installchangelogs $(upstream_dir)/ChangeLog
@@ -133,3 +97,9 @@ override_dh_compress:
 
 override_dh_strip:
 	dh_strip -X.a
+
+get-orig-source:
+	svn co svn://gcc.gnu.org/svn/gcc/branches/ARM/embedded-4_9-branch@$(svn_revision) debian/tmp_source
+	echo "Please refer to the documentation of the gcc package" > debian/tmp_source/texi_test.txt
+	find debian/tmp_source -name "*.texi" -exec cp debian/tmp_source/texi_test.txt \{\} \;
+	tar --exclude=".svn" -C debian/tmp_source -c --xz -f ../gcc-arm-none-eabi_$(deb_upstream_version).orig.tar.xz .
