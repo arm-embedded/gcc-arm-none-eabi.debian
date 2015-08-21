@@ -1,2 +1,2 @@
-0001-gcc-gfdl-build.patch
-0002-add-big-endian-support.patch
+gcc-gfdl-build.patch
+add-big-endian-support.patch
