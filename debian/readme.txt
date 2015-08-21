@@ -1,5 +1,4 @@
 GNU Tools for ARM Embedded Processors
-Version: 4.8
 
 Table of Contents
 * Installing executables on Linux
