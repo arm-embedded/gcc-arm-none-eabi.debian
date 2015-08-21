@@ -1,0 +1,2 @@
+usr/arm-none-eabi/lib/* /usr/lib/arm-none-eabi/newlib/
+usr/arm-none-eabi/include/* /usr/include/newlib/

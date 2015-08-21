@@ -5,22 +5,29 @@ target=arm-none-eabi
 
 MULTILIB_LIST="--with-multilib-list=armv6-m,armv7-m,armv7e-m,armv7-r"
 
-GCC_VERSION=4.9
-GCC_PACKAGE=gcc-$(GCC_VERSION)
+PACKAGE_GCC=gcc-arm-none-eabi
+PACKAGE_NEWLIB=libstdc\+\+-arm-none-eabi-newlib
+TARGET=arm-none-eabi
+TOP_DIR=$(shell pwd)
 
-package=gcc-arm-none-eabi
-top_dir=$(shell pwd)
-
-deb_version := $(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
-deb_upstream_version := $(shell echo $(deb_version) | cut -d- -f1)
-base_version := $(shell echo $(deb_version) | sed -e 's/\([1-9]\.[0-9]\).*-.*/\1/')
-svn_revision := $(shell echo $(deb_version) | grep -oP "svn\K([0-9]+)")
-build_dir=$(top_dir)/build
+DEB_VERSION := $(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
+DEB_UPSTREAM_VERSION := $(shell echo $(DEB_VERSION) | cut -d- -f1)
+SVN_REVISION := $(shell echo $(DEB_VERSION) | grep -oP "svn\K([0-9]+)")
+GCC_CHECKOUT_SOURCE_DIR=$(TOP_DIR)/../gcc_arm_embedded_source
+GCC_BUILD_DIR=$(TOP_DIR)/build
+GCC_DEB_TMP_DIR=$(TOP_DIR)/debian/$(PACKAGE_GCC)-tmp
+LIBSTDCXX_SDIR=$(TOP_DIR)/libstdc++-v3
+LIBSTDCXX_BUILDFLAGS=CFLAGS="-g -O2 -ffunction-sections -fdata-sections" CXXFLAGS="-g -O2 -ffunction-sections -fdata-sections" LDFLAGS=""
+LIBSTDCXX_NANO_BUILDFLAGS=CFLAGS="-g -Os -ffunction-sections -fdata-sections -fno-exceptions" CXXFLAGS="-g -Os -ffunction-sections -fdata-sections -fno-exceptions" LDFLAGS=""
+LIBSTDCXX_BUILD_DIR=$(TOP_DIR)/build_libstdcxx
+LIBSTDCXX_NANO_BUILD_DIR=$(TOP_DIR)/build_libstdcxx_nano
+LIBSTDCXX_DEB_TMP_DIR=$(TOP_DIR)/debian/$(PACKAGE_NEWLIB)-tmp
+LIBSTDCXX_NANO_DEB_TMP_DIR=$(TOP_DIR)/debian/$(PACKAGE_NEWLIB)-tmp_nano
 
 export DEB_BUILD_MAINT_OPTIONS=hardening=-format
-buildflags:=$(shell dpkg-buildflags --export=configure) INHIBIT_LIBC_CFLAGS="-DUSE_TM_CLONE_REGISTRY=0"
+BUILDFLAGS:=$(shell dpkg-buildflags --export=configure) INHIBIT_LIBC_CFLAGS="-DUSE_TM_CLONE_REGISTRY=0"
 
-target_tools=\
+TARGET_TOOLS=\
 	AR_FOR_TARGET=$(target)-ar \
 	AS_FOR_TARGET=$(target)-as \
 	LD_FOR_TARGET=$(target)-ld \
@@ -30,17 +37,9 @@ target_tools=\
 	READELF_FOR_TARGET=$(target)-readelf \
 	STRIP_FOR_TARGET=$(target)-strip
 
-configure_flags = \
-	--enable-languages=c,c++ \
-	--prefix=/usr/lib \
-	--infodir=/usr/share/doc/$(package)/info \
+COMMON_FLAGS = \
 	--mandir=/usr/share/man \
-	--htmldir=/usr/share/doc/$(package)/html \
-	--pdfdir=/usr/share/doc/$(package)/pdf \
-	--bindir=/usr/bin \
-	--libexecdir=/usr/lib \
-	--libdir=/usr/lib \
-	--with-system-zlib \
+	--enable-languages=c,c++,lto \
 	--enable-multilib \
 	--disable-decimal-float \
 	--disable-libffi \
@@ -49,48 +48,110 @@ configure_flags = \
 	--disable-libquadmath \
 	--disable-libssp \
 	--disable-libstdcxx-pch \
-	--disable-libstdc++-v3 \
 	--disable-nls \
 	--disable-shared \
 	--disable-threads \
 	--disable-tls \
 	--build=$(DEB_BUILD_GNU_TYPE) \
-	--host=$(DEB_HOST_GNU_TYPE) \
-	--target=$(target) \
+	--target=$(TARGET) \
+	--with-system-zlib \
 	--with-gnu-as \
 	--with-gnu-ld \
-	--with-headers=no \
-	--without-newlib \
-	"--with-pkgversion=$(deb_version)" \
+	"--with-pkgversion=$(DEB_VERSION)" \
 	--without-included-gettext \
 	$(MULTILIB_LIST) \
-	$(buildflags) \
-	$(target_tools)
+	$(BUILDFLAGS) \
+	$(TARGET_TOOLS) \
+
+CONFIGURE_LIBSTDCXX_FLAGS = \
+	$(COMMON_FLAGS) \
+	--with-cross-host=$(DEB_HOST_GNU_TYPE) \
+	--enable-multilib \
+	--disable-plugin \
+	--disable-libstdcxx-verbose \
+	--with-newlib \
+	--with-headers=yes \
+	--with-host-libstdcxx="-static-libgcc -Wl,-Bstatic,-lstdc++,-Bdynamic -lm" \
+	--disable-option-checking \
+	--host=$(TARGET) \
+	$(MULTILIB_LIST) \
+
+CONFIGURE_GCC_FLAGS = \
+	$(COMMON_FLAGS) \
+	--prefix=/usr/lib \
+	--infodir=/usr/share/doc/$(PACKAGE_GCC)/info \
+	--htmldir=/usr/share/doc/$(PACKAGE_GCC)/html \
+	--pdfdir=/usr/share/doc/$(PACKAGE_GCC)/pdf \
+	--bindir=/usr/bin \
+	--libexecdir=/usr/lib \
+	--libdir=/usr/lib \
+	--disable-libstdc++-v3 \
+	--host=$(DEB_HOST_GNU_TYPE) \
+	--with-headers=no \
+	--without-newlib \
+	$(MULTILIB_LIST) \
+	$(BUILDFLAGS) \
+	$(TARGET_TOOLS)
 
 %:
-	dh $@ -B$(build_dir) --with autotools-dev --parallel --with autoreconf
+	dh $@ -B$(GCC_BUILD_DIR) --with autotools-dev --parallel --with autoreconf
 
 override_dh_autoreconf:
 	autoreconf2.64 -f
 
-override_dh_auto_configure: $(unpack_stamp)
-	dh_auto_configure -B$(build_dir) -- $(configure_flags)
+override_dh_auto_configure:
+	dh_auto_configure -B$(GCC_BUILD_DIR) -- $(CONFIGURE_GCC_FLAGS)
+	dh_auto_configure -D$(LIBSTDCXX_SDIR) -B$(LIBSTDCXX_BUILD_DIR) -- $(CONFIGURE_LIBSTDCXX_FLAGS) $(LIBSTDCXX_BUILDFLAGS)
+	dh_auto_configure -D$(LIBSTDCXX_SDIR) -B$(LIBSTDCXX_NANO_BUILD_DIR) -- $(CONFIGURE_LIBSTDCXX_FLAGS) $(LIBSTDCXX_NANO_BUILDFLAGS)
 
 override_dh_auto_install:
-	$(MAKE) install -C$(build_dir) DESTDIR=$(top_dir)/debian/tmp
+	$(MAKE) install -C$(GCC_BUILD_DIR) DESTDIR=$(GCC_DEB_TMP_DIR)
+	dh_auto_install -B $(LIBSTDCXX_BUILD_DIR) --destdir $(LIBSTDCXX_DEB_TMP_DIR)
+	dh_auto_install -B $(LIBSTDCXX_NANO_BUILD_DIR) --destdir $(LIBSTDCXX_NANO_DEB_TMP_DIR)
+	find $(LIBSTDCXX_NANO_DEB_TMP_DIR) \
+		-name "*.a" \
+		-exec rename 's@$(LIBSTDCXX_NANO_DEB_TMP_DIR)/(.*).a@$(LIBSTDCXX_DEB_TMP_DIR)/$$1_nano.a@' \{\} \;
+	find $(LIBSTDCXX_DEB_TMP_DIR) -name "*.la" -exec rm -f {} +
 
 override_dh_auto_test:
 	@echo "no testing, that's way too painful"
 
 override_dh_clean:
-	rm -rf $(build_dir)
+	rm -rf $(GCC_BUILD_DIR) $(LIBSTDCXX_BUILD_DIR) $(LIBSTDCXX_NANO_BUILD_DIR)
+	rm -rf $(GCC_DEB_TMP_DIR) $(LIBSTDCXX_DEB_TMP_DIR) $(LIBSTDCXX_NANO_DEB_TMP_DIR)
 	dh_clean
+
+override_dh_auto_build:
+	dh_auto_build -B $(GCC_BUILD_DIR)
+	dh_auto_build -B $(LIBSTDCXX_BUILD_DIR)
+	dh_auto_build -B $(LIBSTDCXX_NANO_BUILD_DIR)
 
 override_dh_strip:
 	dh_strip -X.a
 
+override_dh_install:
+	dh_install -p$(PACKAGE_GCC) --sourcedir $(GCC_DEB_TMP_DIR)
+	dh_install -p$(PACKAGE_NEWLIB) --sourcedir $(LIBSTDCXX_DEB_TMP_DIR)
+
+override_dh_compress:
+	dh_compress -Xexamples/
+
 get-orig-source:
-	svn co svn://gcc.gnu.org/svn/gcc/branches/ARM/embedded-4_9-branch@$(svn_revision) debian/tmp_source
-	echo "Please refer to the documentation of the gcc package" > debian/tmp_source/texi_test.txt
-	find debian/tmp_source -name "*.texi" -exec cp debian/tmp_source/texi_test.txt \{\} \;
-	tar --exclude=".svn" -C debian/tmp_source -c --xz -f ../gcc-arm-none-eabi_$(deb_upstream_version).orig.tar.xz .
+	svn co svn://gcc.gnu.org/svn/gcc/branches/ARM/embedded-4_9-branch@$(SVN_REVISION) $(GCC_CHECKOUT_SOURCE_DIR)
+	echo "Please refer to the documentation of the gcc package" > $(GCC_CHECKOUT_SOURCE_DIR)/texi_test.txt
+	find debian/tmp_source -name "*.texi" -exec cp $(GCC_CHECKOUT_SOURCE_DIR)/texi_test.txt \{\} \;
+	tar -C $(GCC_CHECKOUT_SOURCE_DIR) -c --xz \
+		--exclude=".svn" \
+		--exclude="libdecnumber" \
+		--exclude="libffi" \
+		--exclude="libgomp" \
+		--exclude="libquadmath" \
+		--exclude="libssp" \
+		--exclude="libada" \
+		--exclude="libgfortran" \
+		--exclude="libcilkrts" \
+		--exclude="libgo" \
+		--exclude="libjava" \
+		--exclude="zlib" \
+		--exclude="gcc/cp/cfns.h" \
+		-f ../$(PACKAGE_GCC)_$(DEB_UPSTREAM_VERSION).orig.tar.xz .

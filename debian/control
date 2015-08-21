@@ -10,7 +10,7 @@ Build-Depends:
  autotools-dev,
  binutils-arm-none-eabi,
  bison,
- debhelper (>= 8.0.0),
+ debhelper (>= 9.0.0),
  dh-autoreconf,
  dejagnu,
  flex,
@@ -46,3 +46,19 @@ Recommends: libnewlib-arm-none-eabi
 Description: GCC cross compiler for ARM Cortex-A/R/M processors
  Bare metal compiler for embedded ARM chips using Cortex-M0/M0+/M3/M4,
  Cortex-R4/R5/R7 and Cortex-A* processors.
+
+Package: libstdc++-arm-none-eabi-newlib
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ libnewlib-dev,
+ libnewlib-arm-none-eabi,
+Recommends:
+ binutils-arm-none-eabi,
+ gcc-arm-none-eabi,
+Description: GNU Standard C++ Library v3 for ARM Cortex-A/R/M processors (newlib)
+ GNU Standard C++ library for embedded ARM chips using Cortex-M0/M0+/M3/M4,
+ Cortex-R4/R5/R7 and Cortex-A* processors.
+ .
+ This library is built using newlib as standard C library.
