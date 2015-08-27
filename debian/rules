@@ -1,17 +1,16 @@
 #!/usr/bin/make -f
 export DH_VERBOSE=1
 
-target=arm-none-eabi
-
 MULTILIB_LIST="--with-multilib-list=armv6-m,armv7-m,armv7e-m,armv7-r"
 
 PACKAGE_GCC=gcc-arm-none-eabi
 PACKAGE_NEWLIB=libstdc\+\+-arm-none-eabi-newlib
 TARGET=arm-none-eabi
 TOP_DIR=$(shell pwd)
+export CC=gcc-4.9
 
 DEB_VERSION := $(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
-DEB_UPSTREAM_VERSION := $(shell echo $(DEB_VERSION) | cut -d- -f1)
+DEB_UPSTREAM_VERSION := $(shell echo $(DEB_VERSION) | cut -d ":" -f 2 | cut -d "-" -f 1)
 SVN_REVISION := $(shell echo $(DEB_VERSION) | grep -oP "svn\K([0-9]+)")
 GCC_CHECKOUT_SOURCE_DIR=$(TOP_DIR)/../gcc_arm_embedded_source
 GCC_BUILD_DIR=$(TOP_DIR)/build
@@ -139,10 +138,9 @@ override_dh_compress:
 get-orig-source:
 	svn co svn://gcc.gnu.org/svn/gcc/branches/ARM/embedded-4_9-branch@$(SVN_REVISION) $(GCC_CHECKOUT_SOURCE_DIR)
 	echo "Please refer to the documentation of the gcc package" > $(GCC_CHECKOUT_SOURCE_DIR)/texi_test.txt
-	find debian/tmp_source -name "*.texi" -exec cp $(GCC_CHECKOUT_SOURCE_DIR)/texi_test.txt \{\} \;
+	find $(GCC_CHECKOUT_SOURCE_DIR) -name "*.texi" -exec cp $(GCC_CHECKOUT_SOURCE_DIR)/texi_test.txt \{\} \;
 	tar -C $(GCC_CHECKOUT_SOURCE_DIR) -c --xz \
 		--exclude=".svn" \
-		--exclude="libdecnumber" \
 		--exclude="libffi" \
 		--exclude="libgomp" \
 		--exclude="libquadmath" \
@@ -153,5 +151,14 @@ get-orig-source:
 		--exclude="libgo" \
 		--exclude="libjava" \
 		--exclude="zlib" \
-		--exclude="gcc/cp/cfns.h" \
+		--exclude="gcc/testsuite/ada" \
+		--exclude="gcc/testsuite/gfortran.dg" \
+		--exclude="gcc/testsuite/gfortran.fortran-torture" \
+		--exclude="gcc/testsuite/go.dg" \
+		--exclude="gcc/testsuite/go.go-torture" \
+		--exclude="gcc/testsuite/go.test" \
+		--exclude="gcc/testsuite/objc" \
+		--exclude="gcc/testsuite/obj-c++.dg" \
+		--exclude="gcc/testsuite/objc.dg" \
+		--exclude="gcc/testsuite/objc-obj-c++-shared" \
 		-f ../$(PACKAGE_GCC)_$(DEB_UPSTREAM_VERSION).orig.tar.xz .
