@@ -1,4 +1,0 @@
-svn-updates.diff
-gcc-base-version.diff
-fix-ffi_call_VFP-with-no-VFP-argument.diff
-libffi-ro-eh_frame_sect.diff
