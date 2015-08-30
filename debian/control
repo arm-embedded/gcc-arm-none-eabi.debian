@@ -15,7 +15,6 @@ Build-Depends:
  dejagnu,
  flex,
  gawk,
- gcc-4.9-source,
  gettext,
  libgmp-dev,
  libmpc-dev,
@@ -32,7 +31,7 @@ Build-Depends:
  zlib1g-dev,
  libisl-dev,
  libcloog-isl-dev,
-Build-Depends-Indep: subversion
+ subversion,
 Standards-Version: 3.9.6
 Homepage: http://gcc.gnu.org/
 X-Python-Version: >= 2.7
@@ -47,18 +46,12 @@ Description: GCC cross compiler for ARM Cortex-A/R/M processors
  Bare metal compiler for embedded ARM chips using Cortex-M0/M0+/M3/M4,
  Cortex-R4/R5/R7 and Cortex-A* processors.
 
-Package: libstdc++-arm-none-eabi-newlib
+Package: gcc-arm-none-eabi-source
 Architecture: all
-Depends:
- ${misc:Depends},
- ${shlibs:Depends},
- libnewlib-dev,
- libnewlib-arm-none-eabi,
-Recommends:
- binutils-arm-none-eabi,
- gcc-arm-none-eabi,
-Description: GNU Standard C++ Library v3 for ARM Cortex-A/R/M processors (newlib)
- GNU Standard C++ library for embedded ARM chips using Cortex-M0/M0+/M3/M4,
+Depends: ${misc:Depends}
+Description: GCC cross compiler for ARM Cortex-A/R/M processors (source)
+ Bare metal compiler for embedded ARM chips using Cortex-M0/M0+/M3/M4,
  Cortex-R4/R5/R7 and Cortex-A* processors.
  .
- This library is built using newlib as standard C library.
+ This package contains the sources and patches which are needed
+ to build the GNU Compiler Collection (GCC) for embedded ARM chips.

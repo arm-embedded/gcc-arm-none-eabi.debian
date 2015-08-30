@@ -1,11 +1,11 @@
 # DP: Build a dummy s-tm-texi without access to the texinfo sources
 # This patch was taken from gcc debian package
 
-Index: b/gcc/Makefile.in
+Index: gcc-arm-none-eabi.git/src/gcc/Makefile.in
 ===================================================================
---- a/gcc/Makefile.in
-+++ b/gcc/Makefile.in
-@@ -2202,30 +2202,8 @@ s-tm-texi: $(srcdir)/doc/../doc/tm.texi
+--- gcc-arm-none-eabi.git.orig/src/gcc/Makefile.in
++++ gcc-arm-none-eabi.git/src/gcc/Makefile.in
+@@ -2204,30 +2204,8 @@ s-tm-texi: $(srcdir)/doc/../doc/tm.texi
  # \r is not portable to Solaris tr, therefore we have a special
  # case for ASCII.  We use \r for other encodings like EBCDIC.
  s-tm-texi: build/genhooks$(build_exeext) $(srcdir)/doc/tm.texi.in

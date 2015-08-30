@@ -1,3 +1,13 @@
+gcc-arm-none-eabi (15:4.9.3+svn227297-1) unstable; urgency=medium
+
+  * Convert package from 3.0(native) to 3.0(quilt) (Closes: #791541)
+    - Add get-orig-source target
+    - Update and rename patches for new upstream version
+    - Rewrite debian/rules
+  * Imported Upstream version 4.9.3+svn227018
+
+ -- Agustin Henze <tin@debian.org>  Thu, 27 Aug 2015 16:20:50 -0300
+
 gcc-arm-none-eabi (14) unstable; urgency=medium
 
   * Update 0001-Add-GNU-ARM-embedded-toolchain-patches.patch to embedded 4.9

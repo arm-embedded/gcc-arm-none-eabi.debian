@@ -1,7 +1,7 @@
-diff --git a/gcc/config/arm/t-rmprofile b/gcc/config/arm/t-rmprofile
+diff --git a/src/gcc/config/arm/t-rmprofile b/src/gcc/config/arm/t-rmprofile
 index 3939461..fe2e59b 100644
---- a/gcc/config/arm/t-rmprofile
-+++ b/gcc/config/arm/t-rmprofile
+--- a/src/gcc/config/arm/t-rmprofile
++++ b/src/gcc/config/arm/t-rmprofile
 @@ -7,20 +7,22 @@ space :=
  space +=
  

@@ -4,39 +4,35 @@ export DH_VERBOSE=1
 MULTILIB_LIST="--with-multilib-list=armv6-m,armv7-m,armv7e-m,armv7-r"
 
 PACKAGE_GCC=gcc-arm-none-eabi
-PACKAGE_NEWLIB=libstdc\+\+-arm-none-eabi-newlib
+PACKAGE_GCC_SOURCE=gcc-arm-none-eabi-source
 TARGET=arm-none-eabi
 TOP_DIR=$(shell pwd)
-export CC=gcc-4.9
 
 DEB_VERSION := $(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
 DEB_UPSTREAM_VERSION := $(shell echo $(DEB_VERSION) | cut -d ":" -f 2 | cut -d "-" -f 1)
 SVN_REVISION := $(shell echo $(DEB_VERSION) | grep -oP "svn\K([0-9]+)")
-GCC_CHECKOUT_SOURCE_DIR=$(TOP_DIR)/../gcc_arm_embedded_source
+GBP_DO_NOT_REMOVE_SRC_PREPEND_FOLDER=$(TOP_DIR)/../.do_not_remove_src_prepend_folder
+GCC_CHECKOUT_SOURCE_DIR=$(TOP_DIR)/../src
 GCC_BUILD_DIR=$(TOP_DIR)/build
+GCC_SOURCE_DIR=$(TOP_DIR)/src
 GCC_DEB_TMP_DIR=$(TOP_DIR)/debian/$(PACKAGE_GCC)-tmp
-LIBSTDCXX_SDIR=$(TOP_DIR)/libstdc++-v3
-LIBSTDCXX_BUILDFLAGS=CFLAGS="-g -O2 -ffunction-sections -fdata-sections" CXXFLAGS="-g -O2 -ffunction-sections -fdata-sections" LDFLAGS=""
-LIBSTDCXX_NANO_BUILDFLAGS=CFLAGS="-g -Os -ffunction-sections -fdata-sections -fno-exceptions" CXXFLAGS="-g -Os -ffunction-sections -fdata-sections -fno-exceptions" LDFLAGS=""
-LIBSTDCXX_BUILD_DIR=$(TOP_DIR)/build_libstdcxx
-LIBSTDCXX_NANO_BUILD_DIR=$(TOP_DIR)/build_libstdcxx_nano
-LIBSTDCXX_DEB_TMP_DIR=$(TOP_DIR)/debian/$(PACKAGE_NEWLIB)-tmp
-LIBSTDCXX_NANO_DEB_TMP_DIR=$(TOP_DIR)/debian/$(PACKAGE_NEWLIB)-tmp_nano
+GCC_DOC_TEXI_LEGEND_DIR=$(TOP_DIR)/../texi_legend.txt
+GCC_SOURCE_DEB_TMP_DIR=$(TOP_DIR)/debian/$(PACKAGE_GCC_SOURCE)-tmp
 
 export DEB_BUILD_MAINT_OPTIONS=hardening=-format
 BUILDFLAGS:=$(shell dpkg-buildflags --export=configure) INHIBIT_LIBC_CFLAGS="-DUSE_TM_CLONE_REGISTRY=0"
 
 TARGET_TOOLS=\
-	AR_FOR_TARGET=$(target)-ar \
-	AS_FOR_TARGET=$(target)-as \
-	LD_FOR_TARGET=$(target)-ld \
-	NM_FOR_TARGET=$(target)-nm \
-	OBJDUMP_FOR_TARGET=$(target)-objdump \
-	RANLIB_FOR_TARGET=$(target)-ranlib \
-	READELF_FOR_TARGET=$(target)-readelf \
-	STRIP_FOR_TARGET=$(target)-strip
+	AR_FOR_TARGET=$(TARGET)-ar \
+	AS_FOR_TARGET=$(TARGET)-as \
+	LD_FOR_TARGET=$(TARGET)-ld \
+	NM_FOR_TARGET=$(TARGET)-nm \
+	OBJDUMP_FOR_TARGET=$(TARGET)-objdump \
+	RANLIB_FOR_TARGET=$(TARGET)-ranlib \
+	READELF_FOR_TARGET=$(TARGET)-readelf \
+	STRIP_FOR_TARGET=$(TARGET)-strip
 
-COMMON_FLAGS = \
+CONFIGURE_GCC_FLAGS = \
 	--mandir=/usr/share/man \
 	--enable-languages=c,c++,lto \
 	--enable-multilib \
@@ -58,25 +54,6 @@ COMMON_FLAGS = \
 	--with-gnu-ld \
 	"--with-pkgversion=$(DEB_VERSION)" \
 	--without-included-gettext \
-	$(MULTILIB_LIST) \
-	$(BUILDFLAGS) \
-	$(TARGET_TOOLS) \
-
-CONFIGURE_LIBSTDCXX_FLAGS = \
-	$(COMMON_FLAGS) \
-	--with-cross-host=$(DEB_HOST_GNU_TYPE) \
-	--enable-multilib \
-	--disable-plugin \
-	--disable-libstdcxx-verbose \
-	--with-newlib \
-	--with-headers=yes \
-	--with-host-libstdcxx="-static-libgcc -Wl,-Bstatic,-lstdc++,-Bdynamic -lm" \
-	--disable-option-checking \
-	--host=$(TARGET) \
-	$(MULTILIB_LIST) \
-
-CONFIGURE_GCC_FLAGS = \
-	$(COMMON_FLAGS) \
 	--prefix=/usr/lib \
 	--infodir=/usr/share/doc/$(PACKAGE_GCC)/info \
 	--htmldir=/usr/share/doc/$(PACKAGE_GCC)/html \
@@ -93,53 +70,47 @@ CONFIGURE_GCC_FLAGS = \
 	$(TARGET_TOOLS)
 
 %:
-	dh $@ -B$(GCC_BUILD_DIR) --with autotools-dev --parallel --with autoreconf
+	dh $@ -D$(GCC_SOURCE_DIR) -B$(GCC_BUILD_DIR) --with autotools-dev --parallel --with autoreconf
 
 override_dh_autoreconf:
-	autoreconf2.64 -f
+	autoreconf2.64 -f $(GCC_SOURCE_DIR)
 
 override_dh_auto_configure:
-	dh_auto_configure -B$(GCC_BUILD_DIR) -- $(CONFIGURE_GCC_FLAGS)
-	dh_auto_configure -D$(LIBSTDCXX_SDIR) -B$(LIBSTDCXX_BUILD_DIR) -- $(CONFIGURE_LIBSTDCXX_FLAGS) $(LIBSTDCXX_BUILDFLAGS)
-	dh_auto_configure -D$(LIBSTDCXX_SDIR) -B$(LIBSTDCXX_NANO_BUILD_DIR) -- $(CONFIGURE_LIBSTDCXX_FLAGS) $(LIBSTDCXX_NANO_BUILDFLAGS)
+	dh_auto_configure -D$(GCC_SOURCE_DIR) -B$(GCC_BUILD_DIR) -- $(CONFIGURE_GCC_FLAGS)
 
 override_dh_auto_install:
 	$(MAKE) install -C$(GCC_BUILD_DIR) DESTDIR=$(GCC_DEB_TMP_DIR)
-	dh_auto_install -B $(LIBSTDCXX_BUILD_DIR) --destdir $(LIBSTDCXX_DEB_TMP_DIR)
-	dh_auto_install -B $(LIBSTDCXX_NANO_BUILD_DIR) --destdir $(LIBSTDCXX_NANO_DEB_TMP_DIR)
-	find $(LIBSTDCXX_NANO_DEB_TMP_DIR) \
-		-name "*.a" \
-		-exec rename 's@$(LIBSTDCXX_NANO_DEB_TMP_DIR)/(.*).a@$(LIBSTDCXX_DEB_TMP_DIR)/$$1_nano.a@' \{\} \;
-	find $(LIBSTDCXX_DEB_TMP_DIR) -name "*.la" -exec rm -f {} +
 
 override_dh_auto_test:
 	@echo "no testing, that's way too painful"
 
 override_dh_clean:
-	rm -rf $(GCC_BUILD_DIR) $(LIBSTDCXX_BUILD_DIR) $(LIBSTDCXX_NANO_BUILD_DIR)
-	rm -rf $(GCC_DEB_TMP_DIR) $(LIBSTDCXX_DEB_TMP_DIR) $(LIBSTDCXX_NANO_DEB_TMP_DIR)
+	rm -rf $(GCC_BUILD_DIR)
+	rm -rf $(GCC_DEB_TMP_DIR) $(GCC_SOURCE_DEB_TMP_DIR)
+	rm -rf 32 x32
 	dh_clean
 
 override_dh_auto_build:
 	dh_auto_build -B $(GCC_BUILD_DIR)
-	dh_auto_build -B $(LIBSTDCXX_BUILD_DIR)
-	dh_auto_build -B $(LIBSTDCXX_NANO_BUILD_DIR)
 
 override_dh_strip:
 	dh_strip -X.a
 
 override_dh_install:
 	dh_install -p$(PACKAGE_GCC) --sourcedir $(GCC_DEB_TMP_DIR)
-	dh_install -p$(PACKAGE_NEWLIB) --sourcedir $(LIBSTDCXX_DEB_TMP_DIR)
+	mkdir -p $(GCC_SOURCE_DEB_TMP_DIR)/usr/src
+	tar -C $(TOP_DIR) -c --xz -f $(GCC_SOURCE_DEB_TMP_DIR)/usr/src/$(PACKAGE_GCC_SOURCE).tar.xz src
+	dh_install -p$(PACKAGE_GCC_SOURCE) --sourcedir $(GCC_SOURCE_DEB_TMP_DIR)
 
 override_dh_compress:
 	dh_compress -Xexamples/
 
 get-orig-source:
 	svn co svn://gcc.gnu.org/svn/gcc/branches/ARM/embedded-4_9-branch@$(SVN_REVISION) $(GCC_CHECKOUT_SOURCE_DIR)
-	echo "Please refer to the documentation of the gcc package" > $(GCC_CHECKOUT_SOURCE_DIR)/texi_test.txt
-	find $(GCC_CHECKOUT_SOURCE_DIR) -name "*.texi" -exec cp $(GCC_CHECKOUT_SOURCE_DIR)/texi_test.txt \{\} \;
-	tar -C $(GCC_CHECKOUT_SOURCE_DIR) -c --xz \
+	echo "Please refer to the documentation of the gcc package" > $(GCC_DOC_TEXI_LEGEND_DIR)
+	find $(GCC_CHECKOUT_SOURCE_DIR) -name "*.texi" -exec cp $(GCC_DOC_TEXI_LEGEND_DIR) \{\} \;
+	touch $(GBP_DO_NOT_REMOVE_SRC_PREPEND_FOLDER)
+	tar -C $(GCC_CHECKOUT_SOURCE_DIR)/.. -c --xz \
 		--exclude=".svn" \
 		--exclude="libffi" \
 		--exclude="libgomp" \
@@ -161,4 +132,5 @@ get-orig-source:
 		--exclude="gcc/testsuite/obj-c++.dg" \
 		--exclude="gcc/testsuite/objc.dg" \
 		--exclude="gcc/testsuite/objc-obj-c++-shared" \
-		-f ../$(PACKAGE_GCC)_$(DEB_UPSTREAM_VERSION).orig.tar.xz .
+		-f ../$(PACKAGE_GCC)_$(DEB_UPSTREAM_VERSION).orig.tar.xz $(GCC_CHECKOUT_SOURCE_DIR) $(GBP_DO_NOT_REMOVE_SRC_PREPEND_FOLDER)
+	svn revert --recursive $(GCC_CHECKOUT_SOURCE_DIR)
