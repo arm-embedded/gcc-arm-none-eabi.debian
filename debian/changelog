@@ -1,3 +1,11 @@
+gcc-arm-none-eabi (15:4.9.3+svn231177-1) unstable; urgency=medium
+
+  * Imported Upstream version 4.9.3+231177
+  * Rebuild against libisl15 (Closes: #806391)
+  * Update package description
+
+ -- Agustin Henze <tin@debian.org>  Wed, 02 Dec 2015 13:43:50 -0300
+
 gcc-arm-none-eabi (15:4.9.3+svn227297-1) unstable; urgency=medium
 
   * Convert package from 3.0(native) to 3.0(quilt) (Closes: #791541)
