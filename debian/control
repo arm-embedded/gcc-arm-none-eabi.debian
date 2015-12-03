@@ -43,15 +43,17 @@ Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, binutils-arm-none-eabi
 Recommends: libnewlib-arm-none-eabi
 Description: GCC cross compiler for ARM Cortex-A/R/M processors
- Bare metal compiler for embedded ARM chips using Cortex-M0/M0+/M3/M4,
- Cortex-R4/R5/R7 and Cortex-A* processors.
+ Bare metal compiler for embedded ARM chips using Cortex-M, Cortex-R and
+ Cortex-A processors.
+ This package is based on the GNU ARM toolchain provided by ARM.
 
 Package: gcc-arm-none-eabi-source
 Architecture: all
 Depends: ${misc:Depends}
 Description: GCC cross compiler for ARM Cortex-A/R/M processors (source)
- Bare metal compiler for embedded ARM chips using Cortex-M0/M0+/M3/M4,
- Cortex-R4/R5/R7 and Cortex-A* processors.
+ Bare metal compiler for embedded ARM chips using Cortex-M, Cortex-R and
+ Cortex-A processors.
+ This package is based on the GNU ARM toolchain provided by ARM.
  .
  This package contains the sources and patches which are needed
  to build the GNU Compiler Collection (GCC) for embedded ARM chips.
