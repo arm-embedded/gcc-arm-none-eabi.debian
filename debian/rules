@@ -106,7 +106,7 @@ override_dh_compress:
 	dh_compress -Xexamples/
 
 get-orig-source:
-	svn co svn://gcc.gnu.org/svn/gcc/branches/ARM/embedded-4_9-branch@$(SVN_REVISION) $(GCC_CHECKOUT_SOURCE_DIR)
+	svn co svn://gcc.gnu.org/svn/gcc/branches/ARM/embedded-5-branch@$(SVN_REVISION) $(GCC_CHECKOUT_SOURCE_DIR)
 	echo "Please refer to the documentation of the gcc package" > $(GCC_DOC_TEXI_LEGEND_DIR)
 	find $(GCC_CHECKOUT_SOURCE_DIR) -name "*.texi" -exec cp $(GCC_DOC_TEXI_LEGEND_DIR) \{\} \;
 	touch $(GBP_DO_NOT_REMOVE_SRC_PREPEND_FOLDER)
