@@ -1,5 +1,5 @@
 /* Get CPU type and Features for x86 processors.
-   Copyright (C) 2012-2014 Free Software Foundation, Inc.
+   Copyright (C) 2012-2015 Free Software Foundation, Inc.
    Contributed by Sriraman Tallam (tmsriram@google.com)
 
 This file is part of GCC.
@@ -97,7 +97,10 @@ enum processor_features
   FEATURE_SSE4_A,
   FEATURE_FMA4,
   FEATURE_XOP,
-  FEATURE_FMA
+  FEATURE_FMA,
+  FEATURE_AVX512F,
+  FEATURE_BMI,
+  FEATURE_BMI2
 };
 
 struct __processor_model
@@ -153,6 +156,9 @@ get_amd_cpu (unsigned int family, unsigned int model)
       /* Bulldozer version 3 "Steamroller"  */
       if (model >= 0x30 && model <= 0x4f)
 	__cpu_model.__cpu_subtype = AMDFAM15H_BDVER3;
+      /* Bulldozer version 4 "Excavator"   */
+      if (model >= 0x60 && model <= 0x7f)
+	__cpu_model.__cpu_subtype = AMDFAM15H_BDVER4;
       break;
     /* AMD Family 16h "btver2" */
     case 0x16:
@@ -288,8 +294,14 @@ get_available_features (unsigned int ecx, unsigned int edx,
     {
       unsigned int eax, ebx, ecx, edx;
       __cpuid_count (7, 0, eax, ebx, ecx, edx);
+      if (ebx & bit_BMI)
+        features |= (1 << FEATURE_BMI);
       if (ebx & bit_AVX2)
 	features |= (1 << FEATURE_AVX2);
+      if (ebx & bit_BMI2)
+        features |= (1 << FEATURE_BMI2);
+      if (ebx & bit_AVX512F)
+	features |= (1 << FEATURE_AVX512F);
     }
 
   unsigned int ext_level;
@@ -397,7 +409,7 @@ __cpu_indicator_init (void)
       if (family == 0x0f)
 	{
 	  family += extended_family;
-	  model += (extended_model << 4);
+	  model += extended_model;
 	}
 
       /* Get CPU type.  */

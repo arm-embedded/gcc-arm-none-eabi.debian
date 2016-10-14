@@ -1,5 +1,5 @@
 ;; Constraint definitions for ARM and Thumb
-;; Copyright (C) 2006-2014 Free Software Foundation, Inc.
+;; Copyright (C) 2006-2015 Free Software Foundation, Inc.
 ;; Contributed by ARM Ltd.
 
 ;; This file is part of GCC.
@@ -34,11 +34,13 @@
 ;; in ARM/Thumb-2 state: Da, Db, Dc, Dd, Dn, Dl, DL, Do, Dv, Dy, Di, Dt, Dp, Dz
 ;; in Thumb-1 state: Pa, Pb, Pc, Pd, Pe
 ;; in Thumb-2 state: Pj, PJ, Ps, Pt, Pu, Pv, Pw, Px, Py
+;; in all states: Pf
 
 ;; The following memory constraints have been used:
-;; in ARM/Thumb-2 state: Q, Uh, Ut, Uv, Uy, Un, Um, Us
+;; in ARM/Thumb-2 state: Uh, Ut, Uv, Uy, Un, Um, Us
 ;; in ARM state: Uq
 ;; in Thumb state: Uu, Uw
+;; in all states: Q
 
 
 (define_register_constraint "t" "TARGET_32BIT ? VFP_LO_REGS : NO_REGS"
@@ -66,8 +68,9 @@
 
 (define_constraint "j"
  "A constant suitable for a MOVW instruction. (ARM/Thumb-2)"
- (and (match_test "TARGET_32BIT && arm_arch_thumb2")
-      (ior (match_code "high")
+ (and (match_test "TARGET_HAVE_MOVT")
+      (ior (and (match_code "high")
+		(match_test "arm_valid_symbolic_address_p (XEXP (op, 0))"))
 	   (and (match_code "const_int")
                 (match_test "(ival & 0xffff0000) == 0")))))
 
@@ -178,6 +181,13 @@
   "@internal In Thumb-1 state a constant in the range 256 to +510"
   (and (match_code "const_int")
        (match_test "TARGET_THUMB1 && ival >= 256 && ival <= 510")))
+
+(define_constraint "Pf"
+  "Memory models except relaxed, consume or release ones."
+  (and (match_code "const_int")
+       (match_test "!is_mm_relaxed (memmodel_from_int (ival))
+		    && !is_mm_consume (memmodel_from_int (ival))
+		    && !is_mm_release (memmodel_from_int (ival))")))
 
 (define_constraint "Ps"
   "@internal In Thumb-2 state a constant in the range -255 to +255"
@@ -338,7 +348,8 @@
  "@internal
   In ARM/ Thumb2 a const_double which can be used with a vcvt.s32.f32 with bits operation"
   (and (match_code "const_double")
-       (match_test "TARGET_32BIT && TARGET_VFP && vfp3_const_double_for_bits (op)")))
+       (match_test "TARGET_32BIT && TARGET_VFP
+		    && vfp3_const_double_for_bits (op) > 0")))
 
 (define_register_constraint "Ts" "(arm_restrict_it) ? LO_REGS : GENERAL_REGS"
  "For arm_restrict_it the core registers @code{r0}-@code{r7}.  GENERAL_REGS otherwise.")
@@ -405,7 +416,7 @@
 
 (define_memory_constraint "Q"
  "@internal
-  In ARM/Thumb-2 state an address that is a single base register."
+  An address that is a single base register."
  (and (match_code "mem")
       (match_test "REG_P (XEXP (op, 0))")))
 

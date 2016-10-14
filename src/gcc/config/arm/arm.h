@@ -1,5 +1,5 @@
 /* Definitions of target machine for GNU compiler, for ARM.
-   Copyright (C) 1991-2014 Free Software Foundation, Inc.
+   Copyright (C) 1991-2015 Free Software Foundation, Inc.
    Contributed by Pieter `Tiggr' Schoenmakers (rcpieter@win.tue.nl)
    and Martin Simmons (@harleqn.co.uk).
    More major hacks by Richard Earnshaw (rearnsha@arm.com)
@@ -29,14 +29,14 @@
 #ifndef GCC_ARM_H
 #define GCC_ARM_H
 
-/* We can't use enum machine_mode inside a generator file because it
+/* We can't use machine_mode inside a generator file because it
    hasn't been created yet; we shouldn't be using any code that
    needs the real definition though, so this ought to be safe.  */
 #ifdef GENERATOR_FILE
 #define MACHMODE int
 #else
 #include "insn-modes.h"
-#define MACHMODE enum machine_mode
+#define MACHMODE machine_mode
 #endif
 
 #include "config/vxworks-dummy.h"
@@ -62,6 +62,13 @@ extern char arm_arch_name[];
 	  builtin_define ("__ARM_FEATURE_CRC32");	\
 	if (TARGET_32BIT)				\
 	  builtin_define ("__ARM_32BIT_STATE");		\
+	if (arm_arch8 && !arm_arch_notm)				\
+	  {								\
+	    if (arm_arch_cmse && use_cmse)				\
+	      builtin_define_with_int_value ("__ARM_FEATURE_CMSE", 3);	\
+	    else							\
+	      builtin_define ("__ARM_FEATURE_CMSE");			\
+	  }								\
 	if (TARGET_ARM_FEATURE_LDREX)				\
 	  builtin_define_with_int_value (			\
 	    "__ARM_FEATURE_LDREX", TARGET_ARM_FEATURE_LDREX);	\
@@ -104,8 +111,6 @@ extern char arm_arch_name[];
 	    builtin_define ("__ARM_BIG_ENDIAN");	\
 	    if (TARGET_THUMB)				\
 	      builtin_define ("__THUMBEB__");		\
-	    if (TARGET_LITTLE_WORDS)			\
-	      builtin_define ("__ARMWEL__");		\
 	  }						\
         else						\
 	  {						\
@@ -166,7 +171,12 @@ extern char arm_arch_name[];
 	    builtin_define ("__ARM_EABI__");		\
 	  }						\
 	if (TARGET_IDIV)				\
-	  builtin_define ("__ARM_ARCH_EXT_IDIV__");	\
+         {						\
+            builtin_define ("__ARM_ARCH_EXT_IDIV__");	\
+            builtin_define ("__ARM_FEATURE_IDIV");	\
+         }						\
+	if (inline_asm_unified)				\
+	  builtin_define ("__ARM_ASM_SYNTAX_UNIFIED__");\
     } while (0)
 
 #include "config/arm/arm-opts.h"
@@ -345,13 +355,13 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 
 /* Should MOVW/MOVT be used in preference to a constant pool.  */
 #define TARGET_USE_MOVT \
-  (arm_arch_thumb2 \
+  (TARGET_HAVE_MOVT \
    && (arm_disable_literal_pool \
        || (!optimize_size && !current_tune->prefer_constant_pool)))
 
 /* We could use unified syntax for arm mode, but for now we just use it
-   for Thumb-2.  */
-#define TARGET_UNIFIED_ASM TARGET_THUMB2
+   for thumb mode.  */
+#define TARGET_UNIFIED_ASM (TARGET_THUMB)
 
 /* Nonzero if this chip provides the DMB instruction.  */
 #define TARGET_HAVE_DMB		(arm_arch6m || arm_arch7)
@@ -364,10 +374,18 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 #define TARGET_HAVE_MEMORY_BARRIER (TARGET_HAVE_DMB || TARGET_HAVE_DMB_MCR)
 
 /* Nonzero if this chip supports ldrex and strex */
-#define TARGET_HAVE_LDREX	((arm_arch6 && TARGET_ARM) || arm_arch7)
+#define TARGET_HAVE_LDREX	((arm_arch6 && TARGET_ARM)	\
+				 || arm_arch7			\
+				 || (arm_arch8 && !arm_arch_notm))
+
+/* Nonzero if this chip supports LPAE.  */
+#define TARGET_HAVE_LPAE						\
+  (arm_arch7 && ((insn_flags & FL_FOR_ARCH7VE) == FL_FOR_ARCH7VE))
 
 /* Nonzero if this chip supports ldrex{bh} and strex{bh}.  */
-#define TARGET_HAVE_LDREXBH	((arm_arch6k && TARGET_ARM) || arm_arch7)
+#define TARGET_HAVE_LDREXBH	((arm_arch6k && TARGET_ARM)	\
+				 || arm_arch7			\
+				 || (arm_arch8 && !arm_arch_notm))
 
 /* Nonzero if this chip supports ldrexd and strexd.  */
 #define TARGET_HAVE_LDREXD	(((arm_arch6k && TARGET_ARM) || arm_arch7) \
@@ -376,9 +394,15 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 /* Nonzero if this chip supports load-acquire and store-release.  */
 #define TARGET_HAVE_LDACQ	(TARGET_ARM_ARCH >= 8)
 
+/* Nonzero if this chip provides the movw and movt instructions.  */
+#define TARGET_HAVE_MOVT	(arm_arch_thumb2 || arm_arch8)
+
+/* Nonzero if this chip provides the cb{n}z instruction.  */
+#define TARGET_HAVE_CBZ		(arm_arch_thumb2 || arm_arch8)
+
 /* Nonzero if integer division instructions supported.  */
-#define TARGET_IDIV		((TARGET_ARM && arm_arch_arm_hwdiv) \
-				 || (TARGET_THUMB2 && arm_arch_thumb_hwdiv))
+#define TARGET_IDIV	((TARGET_ARM && arm_arch_arm_hwdiv)	\
+			 || (TARGET_THUMB && arm_arch_thumb_hwdiv))
 
 /* Nonzero if disallow volatile memory access in IT block.  */
 #define TARGET_NO_VOLATILE_CE		(arm_arch_no_volatile_ce)
@@ -448,9 +472,6 @@ extern int arm_fpu_attr;
 #define TARGET_DEFAULT_FLOAT_ABI ARM_FLOAT_ABI_SOFT
 #endif
 
-#define LARGEST_EXPONENT_IS_NORMAL(bits) \
-    ((bits) == 16 && arm_fp16_format == ARM_FP16_FORMAT_ALTERNATIVE)
-
 #ifndef ARM_DEFAULT_ABI
 #define ARM_DEFAULT_ABI ARM_ABI_APCS
 #endif
@@ -483,7 +504,9 @@ enum base_architecture
   BASE_ARCH_7R = 7,
   BASE_ARCH_7M = 7,
   BASE_ARCH_7EM = 7,
-  BASE_ARCH_8A = 8
+  BASE_ARCH_8A = 8,
+  BASE_ARCH_8M_BASE = 8,
+  BASE_ARCH_8M_MAIN = 8
 };
 
 /* The major revision number of the ARM Architecture implemented by the target.  */
@@ -586,6 +609,9 @@ extern bool arm_disable_literal_pool;
 /* Nonzero if chip supports the ARMv8 CRC instructions.  */
 extern int arm_arch_crc;
 
+/* Nonzero if chip support the ARMv8-M Security Extensions.  */
+extern int arm_arch_cmse;
+
 #ifndef TARGET_DEFAULT
 #define TARGET_DEFAULT  (MASK_APCS_FRAME)
 #endif
@@ -628,16 +654,10 @@ extern int arm_arch_crc;
    type, but kept valid in the wider mode.  The signedness of the
    extension may differ from that of the type.  */
 
-/* It is far faster to zero extend chars than to sign extend them */
-
 #define PROMOTE_MODE(MODE, UNSIGNEDP, TYPE)	\
   if (GET_MODE_CLASS (MODE) == MODE_INT		\
       && GET_MODE_SIZE (MODE) < 4)      	\
     {						\
-      if (MODE == QImode)			\
-	UNSIGNEDP = 1;				\
-      else if (MODE == HImode)			\
-	UNSIGNEDP = 1;				\
       (MODE) = SImode;				\
     }
 
@@ -652,9 +672,8 @@ extern int arm_arch_crc;
 #define BYTES_BIG_ENDIAN  (TARGET_BIG_END != 0)
 
 /* Define this if most significant word of a multiword number is the lowest
-   numbered.
-   This is always false, even when in big-endian mode.  */
-#define WORDS_BIG_ENDIAN  (BYTES_BIG_ENDIAN && ! TARGET_LITTLE_WORDS)
+   numbered.  */
+#define WORDS_BIG_ENDIAN  (BYTES_BIG_ENDIAN)
 
 #define UNITS_PER_WORD	4
 
@@ -771,6 +790,11 @@ extern int arm_arch_crc;
 /* AAPCS requires that structure alignment is affected by bitfields.  */
 #ifndef PCC_BITFIELD_TYPE_MATTERS
 #define PCC_BITFIELD_TYPE_MATTERS TARGET_AAPCS_BASED
+#endif
+
+/* The maximum size of the sync library functions supported.  */
+#ifndef MAX_SYNC_LIBFUNC_SIZE
+#define MAX_SYNC_LIBFUNC_SIZE (2 * UNITS_PER_WORD)
 #endif
 
 
@@ -1166,7 +1190,7 @@ extern int arm_regs_in_sequence[];
 
 /* Tell IRA to use the order we define rather than messing it up with its
    own cost calculations.  */
-#define HONOR_REG_ALLOC_ORDER
+#define HONOR_REG_ALLOC_ORDER 1
 
 /* Interrupt functions can only use registers that have already been
    saved by the prologue, even if they would normally be
@@ -1289,14 +1313,10 @@ enum reg_class
 /* For the Thumb the high registers cannot be used as base registers
    when addressing quantities in QI or HI mode; if we don't know the
    mode, then we must be conservative.  */
-#define MODE_BASE_REG_CLASS(MODE)					\
-  (arm_lra_flag								\
-   ? (TARGET_32BIT ? CORE_REGS						\
-      : GET_MODE_SIZE (MODE) >= 4 ? BASE_REGS				\
-      : LO_REGS)							\
-   : ((TARGET_ARM || (TARGET_THUMB2 && !optimize_size)) ? CORE_REGS	\
-      : ((MODE) == SImode) ? BASE_REGS					\
-      : LO_REGS))
+#define MODE_BASE_REG_CLASS(MODE)				\
+  (TARGET_32BIT ? CORE_REGS					\
+   : GET_MODE_SIZE (MODE) >= 4 ? BASE_REGS			\
+   : LO_REGS)
 
 /* For Thumb we can not support SP+reg addressing, so we return LO_REGS
    instead of BASE_REGS.  */
@@ -1492,6 +1512,7 @@ do {									      \
 #define ARM_FT_VOLATILE		(1 << 4) /* Does not return.  */
 #define ARM_FT_NESTED		(1 << 5) /* Embedded inside another func.  */
 #define ARM_FT_STACKALIGN	(1 << 6) /* Called with misaligned stack.  */
+#define ARM_FT_CMSE_ENTRY	(1 << 7) /* ARMv8-M non-secure entry function.  */
 
 /* Some macros to test these flags.  */
 #define ARM_FUNC_TYPE(t)	(t & ARM_FT_TYPE_MASK)
@@ -1500,6 +1521,7 @@ do {									      \
 #define IS_NAKED(t)        	(t & ARM_FT_NAKED)
 #define IS_NESTED(t)       	(t & ARM_FT_NESTED)
 #define IS_STACKALIGN(t)       	(t & ARM_FT_STACKALIGN)
+#define IS_CMSE_ENTRY(t)	(t & ARM_FT_CMSE_ENTRY)
 
 
 /* Structure used to hold the function stack frame layout.  Offsets are
@@ -1519,7 +1541,7 @@ typedef struct GTY(()) arm_stack_offsets
 }
 arm_stack_offsets;
 
-#ifndef GENERATOR_FILE
+#if !defined(GENERATOR_FILE) && !defined (USED_FOR_TARGET)
 /* A C structure for machine-specific, per-function data.
    This is added to the cfun structure.  */
 typedef struct GTY(()) machine_function
@@ -1556,7 +1578,9 @@ typedef struct GTY(()) machine_function
   rtx thumb1_cc_op0;
   rtx thumb1_cc_op1;
   /* Also record the CC mode that is supported.  */
-  enum machine_mode thumb1_cc_mode;
+  machine_mode thumb1_cc_mode;
+  /* Set to 1 after arm_reorg has started.  */
+  int after_arm_reorg;
 }
 machine_function;
 #endif
@@ -1585,6 +1609,7 @@ enum arm_pcs
 /* Default procedure calling standard of current compilation unit. */
 extern enum arm_pcs arm_pcs_default;
 
+#if !defined (USED_FOR_TARGET)
 /* A C type for declaring a variable that is used as the first argument of
    `FUNCTION_ARG' and other related values.  */
 typedef struct
@@ -1618,6 +1643,7 @@ typedef struct
   int aapcs_vfp_rcount;
   MACHMODE aapcs_vfp_rmode;
 } CUMULATIVE_ARGS;
+#endif
 
 #define FUNCTION_ARG_PADDING(MODE, TYPE) \
   (arm_pad_arg_upward (MODE, TYPE) ? upward : downward)
@@ -2148,16 +2174,20 @@ extern int making_const_table;
    : reverse_condition (code))
 
 #define CLZ_DEFINED_VALUE_AT_ZERO(MODE, VALUE) \
-  ((VALUE) = GET_MODE_UNIT_BITSIZE (MODE))
+  ((VALUE) = GET_MODE_UNIT_BITSIZE (MODE), 2)
 #define CTZ_DEFINED_VALUE_AT_ZERO(MODE, VALUE) \
-  ((VALUE) = GET_MODE_UNIT_BITSIZE (MODE))
+  ((VALUE) = GET_MODE_UNIT_BITSIZE (MODE), 2)
 
 #define CC_STATUS_INIT \
   do { cfun->machine->thumb1_cc_insn = NULL_RTX; } while (0)
 
+#undef ASM_APP_ON
+#define ASM_APP_ON (inline_asm_unified ? "\t.syntax unified\n" : \
+		    "\t.syntax divided\n")
+
 #undef  ASM_APP_OFF
-#define ASM_APP_OFF (TARGET_THUMB1 ? "\t.code\t16\n" : \
-		     TARGET_THUMB2 ? "\t.thumb\n" : "")
+#define ASM_APP_OFF (TARGET_ARM ? "\t.arm\n\t.syntax divided\n" : \
+		     "\t.thumb\n\t.syntax unified\n")
 
 /* Output a push or a pop instruction (only used when profiling).
    We can't push STATIC_CHAIN_REGNUM (r12) directly with Thumb-1.  We know
@@ -2328,8 +2358,12 @@ extern int making_const_table;
 #define TARGET_ARM_ARCH	\
   (arm_base_arch)	\
 
-#define TARGET_ARM_V6M (!arm_arch_notm && !arm_arch_thumb2)
-#define TARGET_ARM_V7M (!arm_arch_notm && arm_arch_thumb2)
+#define TARGET_ARM_V6M (TARGET_ARM_ARCH == BASE_ARCH_6M && !arm_arch_notm \
+			&& !arm_arch_thumb2)
+#define TARGET_ARM_V7M (TARGET_ARM_ARCH == BASE_ARCH_7M && !arm_arch_notm \
+			&& arm_arch_thumb2)
+#define TARGET_ARM_V8M (TARGET_ARM_ARCH == BASE_ARCH_8M_BASE \
+			&& !arm_arch_notm && !arm_arch_thumb2)
 
 /* The highest Thumb instruction set version supported by the chip.  */
 #define TARGET_ARM_ARCH_ISA_THUMB 		\
@@ -2358,17 +2392,17 @@ extern int making_const_table;
    point types.  Where bit 1 indicates 16-bit support, bit 2 indicates
    32-bit support, bit 3 indicates 64-bit support.  */
 #define TARGET_ARM_FP			\
-  (TARGET_VFP_SINGLE ? 4		\
-  		     : (TARGET_VFP_DOUBLE ? (TARGET_FP16 ? 14 : 12) : 0))
+  (!TARGET_SOFT_FLOAT ? (TARGET_VFP_SINGLE ? 4		\
+			: (TARGET_VFP_DOUBLE ? (TARGET_FP16 ? 14 : 12) : 0)) \
+		      : 0)
 
 
 /* Set as a bit mask indicating the available widths of floating point
    types for hardware NEON floating point.  This is the same as
    TARGET_ARM_FP without the 64-bit bit set.  */
-#ifdef TARGET_NEON
-#define TARGET_NEON_FP		\
-  (TARGET_ARM_FP & (0xff ^ 0x08))
-#endif
+#define TARGET_NEON_FP				 \
+  (TARGET_NEON ? (TARGET_ARM_FP & (0xff ^ 0x08)) \
+	       : 0)
 
 /* The maximum number of parallel loads or stores we support in an ldm/stm
    instruction.  */
@@ -2404,5 +2438,10 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
 #endif
 
 #define DRIVER_SELF_SPECS MCPU_MTUNE_NATIVE_SPECS
+#define TARGET_SUPPORTS_WIDE_INT 1
+
+/* Define SECTION_ARM_PURECODE as the ARM specific section attribute
+   representation for SHF_ARM_PURECODE in GCC.  */
+#define SECTION_ARM_PURECODE SECTION_MACH_DEP
 
 #endif /* ! GCC_ARM_H */
