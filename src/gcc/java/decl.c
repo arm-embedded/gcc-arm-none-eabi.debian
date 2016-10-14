@@ -1,6 +1,6 @@
 /* Process declarations and variables for the GNU compiler for the
    Java(TM) language.
-   Copyright (C) 1996-2014 Free Software Foundation, Inc.
+   Copyright (C) 1996-2015 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -27,6 +27,17 @@ The Free Software Foundation is independent of Sun Microsystems, Inc.  */
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
+#include "hash-set.h"
+#include "machmode.h"
+#include "vec.h"
+#include "double-int.h"
+#include "input.h"
+#include "alias.h"
+#include "symtab.h"
+#include "options.h"
+#include "real.h"
+#include "wide-int.h"
+#include "inchash.h"
 #include "tree.h"
 #include "stor-layout.h"
 #include "stringpool.h"
@@ -38,13 +49,20 @@ The Free Software Foundation is independent of Sun Microsystems, Inc.  */
 #include "jcf.h"
 #include "java-except.h"
 #include "ggc.h"
+#include "hash-map.h"
+#include "is-a.h"
+#include "plugin-api.h"
+#include "tm.h"
+#include "hard-reg-set.h"
+#include "input.h"
+#include "function.h"
+#include "ipa-ref.h"
 #include "cgraph.h"
 #include "tree-inline.h"
 #include "target.h"
 #include "version.h"
 #include "tree-iterator.h"
 #include "langhooks.h"
-#include "cgraph.h"
 
 #if defined (DEBUG_JAVA_BINDING_LEVELS)
 extern void indent (void);
@@ -510,7 +528,7 @@ static void
 parse_version (void)
 {
   const char *p = version_string;
-  unsigned int major = 0, minor = 0;
+  unsigned int major = 0;
   unsigned int abi_version;
 
   /* Skip leading junk.  */
@@ -528,13 +546,6 @@ parse_version (void)
   gcc_assert (*p == '.' && ISDIGIT (p[1]));
   ++p;
 
-  /* Extract minor version.  */
-  while (ISDIGIT (*p))
-    {
-      minor = minor * 10 + *p - '0';
-      ++p;
-    }
-
   if (flag_indirect_dispatch)
     {
       abi_version = GCJ_CURRENT_BC_ABI_VERSION;
@@ -543,9 +554,10 @@ parse_version (void)
   else /* C++ ABI */
     {
       /* Implicit in this computation is the idea that we won't break the
-	 old-style binary ABI in a sub-minor release (e.g., from 4.0.0 to
-	 4.0.1).  */
-      abi_version = 100000 * major + 1000 * minor;
+	 old-style binary ABI in a sub-minor release (e.g., from 5.0.0 to
+	 5.1.0).  Freeze the ABI on the gcc-5-branch with the value of the
+	 GCC 5.3 release.*/
+      abi_version = 100000 * major + 1000 * 3;
     }
   if (flag_bootstrap_classes)
     abi_version |= FLAG_BOOTSTRAP_LOADER;
@@ -1307,7 +1319,7 @@ static struct binding_level *
 make_binding_level (void)
 {
   /* NOSTRICT */
-  return ggc_alloc_cleared_binding_level ();
+  return ggc_cleared_alloc<binding_level> ();
 }
 
 void
@@ -1646,7 +1658,7 @@ java_dup_lang_specific_decl (tree node)
     return;
 
   lang_decl_size = sizeof (struct lang_decl);
-  x = ggc_alloc_lang_decl (lang_decl_size);
+  x = ggc_alloc<struct lang_decl> ();
   memcpy (x, DECL_LANG_SPECIFIC (node), lang_decl_size);
   DECL_LANG_SPECIFIC (node) = x;
 }
@@ -1846,8 +1858,8 @@ end_java_method (void)
 	 variable to the block_body */
       fbody = DECL_SAVED_TREE (fndecl);
       block_body = BIND_EXPR_BODY (fbody);
-      htab_traverse (DECL_FUNCTION_INIT_TEST_TABLE (fndecl),
-		     attach_init_test_initialization_flags, block_body);
+      hash_table<treetreehasher> *ht = DECL_FUNCTION_INIT_TEST_TABLE (fndecl);
+      ht->traverse<tree, attach_init_test_initialization_flags> (block_body);
     }
 
   finish_method (fndecl);
@@ -1890,7 +1902,7 @@ finish_method (tree fndecl)
   cfun->function_end_locus = DECL_FUNCTION_LAST_LINE (fndecl);
 
   /* Defer inlining and expansion to the cgraph optimizers.  */
-  cgraph_finalize_function (fndecl, false);
+  cgraph_node::finalize_function (fndecl, false);
 }
 
 /* We pessimistically marked all methods and fields external until we
@@ -1906,7 +1918,7 @@ java_mark_decl_local (tree decl)
   /* Double check that we didn't pass the function to the callgraph early.  */
   if (TREE_CODE (decl) == FUNCTION_DECL)
     {
-      struct cgraph_node *node = cgraph_get_node (decl);
+      struct cgraph_node *node = cgraph_node::get (decl);
       gcc_assert (!node || !node->definition);
     }
 #endif

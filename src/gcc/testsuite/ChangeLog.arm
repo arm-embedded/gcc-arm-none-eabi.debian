@@ -1,33 +1,138 @@
-2015-03-02  Terry Guo  <terry.guo@arm.com>
+2016-09-22  Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
-	Backport from mainline r220999
-	2015-02-26  Terry Guo  <terry.guo@arm.com>
+	* gcc.target/arm/atomic-comp-swap-release-acquire-3.c: New test.
+	* gcc.target/arm/atomic-op-acq_rel-3.c: Likewise.
+	* gcc.target/arm/atomic-op-acquire-3.c: Likewise.
+	* gcc.target/arm/atomic-op-char-3.c: Likewise.
+	* gcc.target/arm/atomic-op-consume-3.c: Likewise.
+	* gcc.target/arm/atomic-op-int-3.c: Likewise.
+	* gcc.target/arm/atomic-op-relaxed-3.c: Likewise.
+	* gcc.target/arm/atomic-op-release-3.c: Likewise.
+	* gcc.target/arm/atomic-op-seq_cst-3.c: Likewise.
+	* gcc.target/arm/atomic-op-short-3.c: Likewise.
 
-	* gcc.target/arm/no-volatile-in-it.c: New test.
-	
-2014-12-02  Terry Guo  <terry.guo@arm.com>
+2016-09-22  Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
-	Backport from mainline r211817
-	2014-06-19  Terry Guo  <terry.guo@arm.com>
+	* lib/target-supports.exp (add_options_for_arm_arch_v6m): Add
+	-mfloat-abi=soft option.
+	(add_options_for_arm_arch_v8m_base): Likewise.
 
-	* gcc.target/arm/thumb1-load-64bit-constant-1.c: New test.
-	* gcc.target/arm/thumb1-load-64bit-constant-2.c: Ditto.
-	* gcc.target/arm/thumb1-load-64bit-constant-3.c: Ditto.
+2016-03-30  Andre Vieira        <andre.simoesdiasvieira@arm.com>
+	    Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
-2014-11-10  Hale Wang  <hale.wang@arm.com>
+	* gcc.target/arm/cmse/cmse-1.c: Add test for cmse_nonsecure_caller.
 
-	Backport from mainline r217175
-	2014-11-06  Hale Wang  <hale.wang@arm.com>
+2016-03-30  Andre Vieira        <andre.simoesdiasvieira@arm.com>
+	    Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
-	* gcc.target/arm/small-multiply-m0-1.c: New test for
-	target -mcpu=cortex-m0.small-multiply.
-	* gcc.target/arm/small-multiply-m0-2.c: Likewise.
-	* gcc.target/arm/small-multiply-m0-3.c: Likewise.
-	* gcc.target/arm/small-multiply-m0plus-1.c: New test for
-	target -mcpu=cortex-m0plus.small-multiply.
-	* gcc.target/arm/small-multiply-m0plus-2.c: Likewise.
-	* gcc.target/arm/small-multiply-m0plus-3.c: Likewise.
-	* gcc.target/arm/small-multiply-m1-1.c: New test for
-	target -mcpu=cortex-m1.small-multiply.
-	* gcc.target/arm/small-multiply-m1-2.c: Likewise.
-	* gcc.target/arm/small-multiply-m1-3.c: Likewise.
+	* gcc/testsuite/gcc.target/arm/cmse/baseline/cmse-11.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/baseline/cmse-13.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/baseline/cmse-6.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/hard-sp/cmse-13.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/hard-sp/cmse-7.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/hard-sp/cmse-8.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/hard/cmse-13.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/hard/cmse-7.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/hard/cmse-8.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/soft/cmse-13.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/soft/cmse-7.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/soft/cmse-8.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/softfp-sp/cmse-7.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/softfp-sp/cmse-8.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/softfp/cmse-13.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/softfp/cmse-7.c: New.
+	* gcc/testsuite/gcc.target/arm/cmse/mainline/softfp/cmse-8.c: New.
+
+2016-03-30  Andre Vieira        <andre.simoesdiasvieira@arm.com>
+	    Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/cmse/cmse-3.c: Add tests.
+	* gcc.target/arm/cmse/cmse-4.c: Add tests.
+
+2016-03-30  Andre Vieira        <andre.simoesdiasvieira@arm.com>
+	    Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/cmse/cmse.exp: Test different multilibs separate.
+	* gcc.target/arm/cmse/struct-1.c: New.
+	* gcc.target/arm/cmse/bitfield-1.c: New.
+	* gcc.target/arm/cmse/bitfield-2.c: New.
+	* gcc.target/arm/cmse/bitfield-3.c: New.
+	* gcc.target/arm/cmse/baseline/cmse-2.c: Test that registers are cleared.
+	* gcc.target/arm/cmse/mainline/soft/cmse-5.c: New.
+	* gcc.target/arm/cmse/mainline/hard/cmse-5.c: New.
+	* gcc.target/arm/cmse/mainline/hard-sp/cmse-5.c: New.
+	* gcc.target/arm/cmse/mainline/softfp/cmse-5.c: New.
+	* gcc.target/arm/cmse/mainline/softfp-sp/cmse-5.c: New.
+
+2016-03-30  Andre Vieira        <andre.simoesdiasvieira@arm.com>
+	    Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/cmse/cmse-2.c: New.
+	* gcc.target/arm/cmse/cmse-4.c: New.
+
+2016-03-30  Andre Vieira        <andre.simoesdiasvieira@arm.com>
+	    Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/cmse/cmse-3.c: New.
+
+2016-03-30  Andre Vieira        <andre.simoesdiasvieira@arm.com>
+	    Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/cmse/cmse.exp: New.
+	* gcc.target/arm/cmse/cmse-1.c: New.
+	* gcc.target/arm/cmse/cmse-12.c: New.
+	* lib/target-supports.exp (check_effective_target_arm_cmse_ok): New.
+
+2016-03-10 Andre Vieira <andre.simoesdiasvieira@arm.com>
+
+	* gcc.target/arm/pr45701-1.c: Escape brackets.
+	* gcc.target/arm/pr45701-2.c: Likewise.
+
+2016-03-07  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* gcc.target/arm/pr45701-1.c: Change assembler scan to not
+	trigger for cortex-r8, when scanning for register r8.
+	* gcc.target/arm/pr45701-2.c: Likewise.
+
+2015-12-17  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* lib/target-supports.exp (check_effective_target_arm_thumb1_movt_ko):
+	Define effective target.
+	* gcc.target/arm/pr42574.c: Require arm_thumb1_movt_ko instead of
+	arm_thumb1_ok as effective target to exclude ARMv8-M Baseline.
+
+2015-12-17  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* lib/target-supports.exp: Generate add_options_for_arm_arch_FUNC and
+	check_effective_target_arm_arch_FUNC_multilib for ARMv8-M Baseline and
+	ARMv8-M Mainline architectures.
+
+2015-12-17  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* lib/target-supports.exp (check_effective_target_arm_cortex_m): Use
+	__ARM_ARCH_ISA_ARM to test for Cortex-M devices.
+
+2015-12-10  Tejas Belagod  <tejas.belagod@arm.com>
+
+	Backport from Mainline
+	2015-04-22  Hale Wang  <hale.wang@arm.com>
+		    Terry Guo  <terry.guo@arm.com>
+
+	PR rtl-optimization/64818
+	* gcc.target/arm/pr64818.c: New test.
+
+2015-12-04  Andre Vieira <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline:
+	2015-10-15  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	PR testsuite/67948
+	* gcc.target/arm/xor-and.c: check for eor instead of orr.
+
+2015-12-04  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline:
+	2015-10-09  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+		    Hale Wang  <hale.wang@arm.com>
+
+	* gcc.dg/tree-ssa/forwprop-33.c: New.

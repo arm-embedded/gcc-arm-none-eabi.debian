@@ -1,5 +1,5 @@
 # -*- shell-script -*-
-#  Copyright (C) 2012-2014 Free Software Foundation, Inc.
+#  Copyright (C) 2012-2015 Free Software Foundation, Inc.
 #  Contributed by Richard Henderson <rth@redhat.com>.
 #
 #  This file is part of the GNU Atomic Library (libatomic).
@@ -26,17 +26,30 @@
 # Map the target cpu to an ARCH sub-directory.  At the same time,
 # work out any special compilation flags as necessary.
 
+# Give operating systems the opportunity to discard XCFLAGS modifications based
+# on ${target_cpu}.  For example to allow proper use of multilibs.
+configure_tgt_pre_target_cpu_XCFLAGS="${XCFLAGS}"
+
 case "${target_cpu}" in
-  alpha*)		ARCH=alpha ;;
+  alpha*)
+	# fenv.c needs this option to generate inexact exceptions.
+	XCFLAGS="${XCFLAGS} -mfp-trap-mode=sui"
+	ARCH=alpha
+	;;
   rs6000 | powerpc*)	ARCH=powerpc ;;
   sh*)			ARCH=sh ;;
 
   arm*)
 	ARCH=arm
-	# ??? Detect when -march=armv7 is already enabled.
-	try_ifunc=yes
-	;;
-
+	case "${target}" in
+            arm*-*-freebsd*)
+                ;;
+            *)
+                # ??? Detect when -march=armv7 is already enabled.
+                try_ifunc=yes
+                ;;
+        esac
+        ;;
   sparc)
 	case " ${CC} ${CFLAGS} " in
 	  *" -m64 "*)
@@ -103,9 +116,26 @@ case "${target}" in
   *-*-linux* | *-*-gnu* | *-*-k*bsd*-gnu \
   | *-*-netbsd* | *-*-freebsd* | *-*-openbsd* \
   | *-*-solaris2* | *-*-sysv4* | *-*-irix6* | *-*-osf* | *-*-hpux11* \
-  | *-*-darwin* | *-*-aix*)
+  | *-*-darwin* | *-*-aix* | *-*-cygwin*)
 	# POSIX system.  The OS is supported.
 	config_path="${config_path} posix"
+	;;
+
+  *-*-mingw*)
+	# OS support for atomic primitives.
+        case ${target_thread_file} in
+          win32)
+            config_path="${config_path} mingw"
+            ;;
+          posix)
+            config_path="${config_path} posix"
+            ;;
+        esac
+	;;
+
+  *-*-rtems*)
+	XCFLAGS="${configure_tgt_pre_target_cpu_XCFLAGS}"
+	config_path="rtems"
 	;;
 
   *-*-elf*)

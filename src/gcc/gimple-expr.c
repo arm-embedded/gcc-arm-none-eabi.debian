@@ -1,6 +1,6 @@
 /* Gimple decl, type, and expression support functions.
 
-   Copyright (C) 2007-2014 Free Software Foundation, Inc.
+   Copyright (C) 2007-2015 Free Software Foundation, Inc.
    Contributed by Aldy Hernandez <aldyh@redhat.com>
 
 This file is part of GCC.
@@ -23,8 +23,21 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
+#include "hash-set.h"
+#include "machmode.h"
+#include "vec.h"
+#include "double-int.h"
+#include "input.h"
+#include "alias.h"
+#include "symtab.h"
+#include "wide-int.h"
+#include "inchash.h"
 #include "tree.h"
-#include "pointer-set.h"
+#include "fold-const.h"
+#include "predict.h"
+#include "hard-reg-set.h"
+#include "input.h"
+#include "function.h"
 #include "basic-block.h"
 #include "tree-ssa-alias.h"
 #include "internal-fn.h"
@@ -374,6 +387,11 @@ copy_var_decl (tree var, tree name, tree type)
   TREE_USED (copy) = 1;
   DECL_SEEN_IN_BIND_EXPR_P (copy) = 1;
   DECL_ATTRIBUTES (copy) = DECL_ATTRIBUTES (var);
+  if (DECL_USER_ALIGN (var))
+    {
+      DECL_ALIGN (copy) = DECL_ALIGN (var);
+      DECL_USER_ALIGN (copy) = 1;
+    }
 
   return copy;
 }
@@ -552,8 +570,8 @@ create_tmp_reg_fn (struct function *fn, tree type, const char *prefix)
    *OP1_P, *OP2_P and *OP3_P respectively.  */
 
 void
-extract_ops_from_tree_1 (tree expr, enum tree_code *subcode_p, tree *op1_p,
-			 tree *op2_p, tree *op3_p)
+extract_ops_from_tree (tree expr, enum tree_code *subcode_p, tree *op1_p,
+		       tree *op2_p, tree *op3_p)
 {
   enum gimple_rhs_class grhs_class;
 
@@ -883,10 +901,9 @@ mark_addressable (tree x)
       && cfun->gimple_df != NULL
       && cfun->gimple_df->decls_to_pointers != NULL)
     {
-      void *namep
-	= pointer_map_contains (cfun->gimple_df->decls_to_pointers, x); 
+      tree *namep = cfun->gimple_df->decls_to_pointers->get (x);
       if (namep)
-	TREE_ADDRESSABLE (*(tree *)namep) = 1;
+	TREE_ADDRESSABLE (*namep) = 1;
     }
 }
 

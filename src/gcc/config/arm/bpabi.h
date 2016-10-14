@@ -1,5 +1,5 @@
 /* Configuration file for ARM BPABI targets.
-   Copyright (C) 2004-2014 Free Software Foundation, Inc.
+   Copyright (C) 2004-2015 Free Software Foundation, Inc.
    Contributed by CodeSourcery, LLC   
 
    This file is part of GCC.
@@ -64,12 +64,17 @@
   " %{!mlittle-endian:%{march=armv7-a|mcpu=cortex-a5    \
    |mcpu=cortex-a7                                      \
    |mcpu=cortex-a8|mcpu=cortex-a9|mcpu=cortex-a15       \
-   |mcpu=cortex-a12					\
+   |mcpu=cortex-a12|mcpu=cortex-a17			\
    |mcpu=cortex-a15.cortex-a7				\
+   |mcpu=cortex-a17.cortex-a7				\
    |mcpu=marvell-pj4					\
    |mcpu=cortex-a53					\
    |mcpu=cortex-a57					\
    |mcpu=cortex-a57.cortex-a53				\
+   |mcpu=cortex-a72					\
+   |mcpu=cortex-a72.cortex-a53				\
+   |mcpu=exynos-m1                                      \
+   |mcpu=xgene1                                         \
    |mcpu=cortex-m1.small-multiply                       \
    |mcpu=cortex-m0.small-multiply                       \
    |mcpu=cortex-m0plus.small-multiply			\
@@ -79,17 +84,25 @@
    |march=armv7e-m|mcpu=cortex-m4|mcpu=cortex-m7        \
    |march=armv6-m|mcpu=cortex-m0                        \
    |march=armv8-a					\
+   |march=armv8-m.base					\
+   |march=armv8-m.main					\
+   |march=armv8-m.main+dsp				\
    :%{!r:--be8}}}"
 #else
 #define BE8_LINK_SPEC \
   " %{mbig-endian:%{march=armv7-a|mcpu=cortex-a5        \
    |mcpu=cortex-a7                                      \
    |mcpu=cortex-a8|mcpu=cortex-a9|mcpu=cortex-a15       \
-   |mcpu=cortex-a12					\
+   |mcpu=cortex-a12|mcpu=cortex-a17			\
    |mcpu=cortex-a15.cortex-a7				\
+   |mcpu=cortex-a17.cortex-a7				\
    |mcpu=cortex-a53					\
    |mcpu=cortex-a57					\
    |mcpu=cortex-a57.cortex-a53				\
+   |mcpu=cortex-a72					\
+   |mcpu=cortex-a72.cortex-a53				\
+   |mcpu=exynos-m1                                      \
+   |mcpu=xgene1                                         \
    |mcpu=cortex-m1.small-multiply                       \
    |mcpu=cortex-m0.small-multiply                       \
    |mcpu=cortex-m0plus.small-multiply                   \
@@ -100,6 +113,9 @@
    |march=armv7e-m|mcpu=cortex-m4|mcpu=cortex-m7        \
    |march=armv6-m|mcpu=cortex-m0                        \
    |march=armv8-a					\
+   |march=armv8-m.base					\
+   |march=armv8-m.main					\
+   |march=armv8-m.main+dsp				\
    :%{!r:--be8}}}"
 #endif
 

@@ -1,5 +1,5 @@
 ;; ARM Thumb-2 Machine Description
-;; Copyright (C) 2007-2014 Free Software Foundation, Inc.
+;; Copyright (C) 2007-2015 Free Software Foundation, Inc.
 ;; Written by CodeSourcery, LLC.
 ;;
 ;; This file is part of GCC.
@@ -267,6 +267,17 @@
    (set_attr "type" "multiple")]
 )
 
+;; Pop a single register as its size is preferred over a post-incremental load
+(define_insn "*thumb2_pop_single"
+  [(set (match_operand:SI 0 "low_register_operand" "=r")
+        (mem:SI (post_inc:SI (reg:SI SP_REGNUM))))]
+  "TARGET_THUMB2 && (reload_in_progress || reload_completed)"
+  "pop\t{%0}"
+  [(set_attr "type" "load1")
+   (set_attr "length" "2")
+   (set_attr "predicable" "yes")]
+)
+
 ;; We have two alternatives here for memory loads (and similarly for stores)
 ;; to reflect the fact that the permissible constant pool ranges differ
 ;; between ldr instructions taking low regs and ldr instructions taking high
@@ -318,7 +329,7 @@
 ;; of the messiness associated with the ARM patterns.
 (define_insn "*thumb2_movhi_insn"
   [(set (match_operand:HI 0 "nonimmediate_operand" "=r,r,l,r,m,r")
-	(match_operand:HI 1 "general_operand"      "r,I,Py,n,r,m"))]
+	(match_operand:HI 1 "general_operand"      "rk,I,Py,n,r,m"))]
   "TARGET_THUMB2
   && (register_operand (operands[0], HImode)
      || register_operand (operands[1], HImode))"
@@ -329,7 +340,7 @@
    movw%?\\t%0, %L1\\t%@ movhi
    str%(h%)\\t%1, %0\\t%@ movhi
    ldr%(h%)\\t%0, %1\\t%@ movhi"
-  [(set_attr "type" "mov_reg,mov_imm,mov_imm,mov_reg,store1,load1")
+  [(set_attr "type" "mov_reg,mov_imm,mov_imm,mov_imm,store1,load1")
    (set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "yes,no,yes,no,no,no")
    (set_attr "length" "2,4,2,4,4,4")
@@ -416,7 +427,7 @@
                    (const_int 0)))]
   {
     operands[3] = GEN_INT (~0);
-    enum machine_mode mode = GET_MODE (operands[2]);
+    machine_mode mode = GET_MODE (operands[2]);
     enum rtx_code rc = GET_CODE (operands[1]);
 
     if (mode == CCFPmode || mode == CCFPEmode)
@@ -503,7 +514,7 @@
   [(const_int 0)]
   {
     enum rtx_code rev_code;
-    enum machine_mode mode;
+    machine_mode mode;
     rtx rev_cond;
 
     emit_insn (gen_rtx_COND_EXEC (VOIDmode,
@@ -560,6 +571,19 @@
   [(set_attr "type" "call")]
 )
 
+(define_insn "*nonsecure_call_reg_thumb2"
+  [(call (unspec:SI [(mem:SI (match_operand:SI 0 "s_register_operand" "r"))]
+		    UNSPEC_NONSECURE_MEM)
+	 (match_operand 1 "" ""))
+   (use (match_operand 2 "" ""))
+   (clobber (reg:SI LR_REGNUM))
+   (clobber (match_dup 0))]
+  "TARGET_THUMB2 && use_cmse"
+  "bl\\t__gnu_cmse_nonsecure_call"
+  [(set_attr "length" "4")
+   (set_attr "type" "call")]
+)
+
 (define_insn "*call_value_reg_thumb2"
   [(set (match_operand 0 "" "")
 	(call (mem:SI (match_operand:SI 1 "register_operand" "l*r"))
@@ -569,6 +593,21 @@
   "TARGET_THUMB2"
   "blx\\t%1"
   [(set_attr "type" "call")]
+)
+
+(define_insn "*nonsecure_call_value_reg_thumb2"
+  [(set (match_operand 0 "" "")
+	(call
+	 (unspec:SI [(mem:SI (match_operand:SI 1 "register_operand" "l*r"))]
+		    UNSPEC_NONSECURE_MEM)
+	 (match_operand 2 "" "")))
+   (use (match_operand 3 "" ""))
+   (clobber (reg:SI LR_REGNUM))
+   (clobber (match_dup 1))]
+  "TARGET_THUMB2 && use_cmse"
+  "bl\t__gnu_cmse_nonsecure_call"
+  [(set_attr "length" "4")
+   (set_attr "type" "call")]
 )
 
 (define_insn "*thumb2_indirect_jump"
@@ -595,7 +634,7 @@
         (and:SI (match_dup 3) (const_int 1)))
    (cond_exec (match_dup 4) (set (match_dup 0) (const_int 0)))]
   {
-    enum machine_mode mode = GET_MODE (operands[2]);
+    machine_mode mode = GET_MODE (operands[2]);
     enum rtx_code rc = GET_CODE (operands[1]);
 
     if (mode == CCFPmode || mode == CCFPEmode)
@@ -627,7 +666,7 @@
     (cond_exec (match_dup 4) (set (match_dup 0)
                                   (ior:SI (match_dup 3) (const_int 1))))]
   {
-    enum machine_mode mode = GET_MODE (operands[2]);
+    machine_mode mode = GET_MODE (operands[2]);
     enum rtx_code rc = GET_CODE (operands[1]);
 
     operands[4] = gen_rtx_fmt_ee (rc, VOIDmode, operands[2], const0_rtx);
@@ -642,15 +681,27 @@
    (set_attr "type" "multiple")]
 )
 
-(define_insn "*thumb2_ior_scc_strict_it"
-  [(set (match_operand:SI 0 "s_register_operand" "=l,l")
+(define_insn_and_split "*thumb2_ior_scc_strict_it"
+  [(set (match_operand:SI 0 "s_register_operand" "=&r")
 	(ior:SI (match_operator:SI 2 "arm_comparison_operator"
 		 [(match_operand 3 "cc_register" "") (const_int 0)])
-		(match_operand:SI 1 "s_register_operand" "0,?l")))]
+		(match_operand:SI 1 "s_register_operand" "r")))]
   "TARGET_THUMB2 && arm_restrict_it"
-  "@
-   it\\t%d2\;mov%d2\\t%0, #1\;it\\t%d2\;orr%d2\\t%0, %1
-   mov\\t%0, #1\;orr\\t%0, %1\;it\\t%D2\;mov%D2\\t%0, %1"
+  "#" ; orr\\t%0, %1, #1\;it\\t%D2\;mov%D2\\t%0, %1
+  "&& reload_completed"
+  [(set (match_dup 0) (ior:SI (match_dup 1) (const_int 1)))
+   (cond_exec (match_dup 4)
+     (set (match_dup 0) (match_dup 1)))]
+  {
+    machine_mode mode = GET_MODE (operands[3]);
+    rtx_code rc = GET_CODE (operands[2]);
+
+    if (mode == CCFPmode || mode == CCFPEmode)
+      rc = reverse_condition_maybe_unordered (rc);
+    else
+      rc = reverse_condition (rc);
+    operands[4] = gen_rtx_fmt_ee (rc, VOIDmode, operands[3], const0_rtx);
+  }
   [(set_attr "conds" "use")
    (set_attr "length" "8")
    (set_attr "type" "multiple")]
@@ -891,7 +942,7 @@
       {
        /* Emit:  cmp\\t%1, %2\;mvn\\t%0, #0\;it\\t%D3\;mov%D3\\t%0, #0\;*/
        enum rtx_code rc = reverse_condition (GET_CODE (operands[3]));
-       enum machine_mode mode = SELECT_CC_MODE (rc, operands[1], operands[2]);
+       machine_mode mode = SELECT_CC_MODE (rc, operands[1], operands[2]);
        rtx tmp1 = gen_rtx_REG (mode, CC_REGNUM);
 
        emit_insn (gen_rtx_SET (VOIDmode,
@@ -1087,7 +1138,15 @@
   "TARGET_THUMB2"
   "* return output_return_instruction (const_true_rtx, true, false, true);"
   [(set_attr "type" "branch")
-   (set_attr "length" "4")]
+  ; If this is a return from a cmse_nonsecure_entry function then code will be
+  ; added to clear the APSR and potentially the FPSCR if VFP is available, so
+  ; we adapt the length accordingly.
+   (set (attr "length")
+    (if_then_else (match_test "IS_CMSE_ENTRY (arm_current_func_type ())")
+     (if_then_else (match_test "TARGET_HARD_FLOAT && TARGET_VFP")
+      (const_int 12)
+      (const_int 8))
+     (const_int 4)))]
 )
 
 (define_insn_and_split "thumb2_eh_return"
@@ -1370,6 +1429,103 @@
    (set_attr "type" "alu_sreg")]
 )
 
+; Constants for op 2 will never be given to these patterns.
+(define_insn_and_split "*iordi_notdi_di"
+  [(set (match_operand:DI 0 "s_register_operand" "=&r,&r")
+	(ior:DI (not:DI (match_operand:DI 1 "s_register_operand" "0,r"))
+		(match_operand:DI 2 "s_register_operand" "r,0")))]
+  "TARGET_THUMB2"
+  "#"
+  "TARGET_THUMB2 && reload_completed"
+  [(set (match_dup 0) (ior:SI (not:SI (match_dup 1)) (match_dup 2)))
+   (set (match_dup 3) (ior:SI (not:SI (match_dup 4)) (match_dup 5)))]
+  "
+  {
+    operands[3] = gen_highpart (SImode, operands[0]);
+    operands[0] = gen_lowpart (SImode, operands[0]);
+    operands[4] = gen_highpart (SImode, operands[1]);
+    operands[1] = gen_lowpart (SImode, operands[1]);
+    operands[5] = gen_highpart (SImode, operands[2]);
+    operands[2] = gen_lowpart (SImode, operands[2]);
+  }"
+  [(set_attr "length" "8")
+   (set_attr "predicable" "yes")
+   (set_attr "predicable_short_it" "no")
+   (set_attr "type" "multiple")]
+)
+
+(define_insn_and_split "*iordi_notzesidi_di"
+  [(set (match_operand:DI 0 "s_register_operand" "=&r,&r")
+	(ior:DI (not:DI (zero_extend:DI
+			 (match_operand:SI 2 "s_register_operand" "r,r")))
+		(match_operand:DI 1 "s_register_operand" "0,?r")))]
+  "TARGET_THUMB2"
+  "#"
+  ; (not (zero_extend...)) means operand0 will always be 0xffffffff
+  "TARGET_THUMB2 && reload_completed"
+  [(set (match_dup 0) (ior:SI (not:SI (match_dup 2)) (match_dup 1)))
+   (set (match_dup 3) (const_int -1))]
+  "
+  {
+    operands[3] = gen_highpart (SImode, operands[0]);
+    operands[0] = gen_lowpart (SImode, operands[0]);
+    operands[1] = gen_lowpart (SImode, operands[1]);
+  }"
+  [(set_attr "length" "4,8")
+   (set_attr "predicable" "yes")
+   (set_attr "predicable_short_it" "no")
+   (set_attr "type" "multiple")]
+)
+
+(define_insn_and_split "*iordi_notdi_zesidi"
+  [(set (match_operand:DI 0 "s_register_operand" "=&r,&r")
+	(ior:DI (not:DI (match_operand:DI 2 "s_register_operand" "0,?r"))
+		(zero_extend:DI
+		 (match_operand:SI 1 "s_register_operand" "r,r"))))]
+  "TARGET_THUMB2"
+  "#"
+  "TARGET_THUMB2 && reload_completed"
+  [(set (match_dup 0) (ior:SI (not:SI (match_dup 2)) (match_dup 1)))
+   (set (match_dup 3) (not:SI (match_dup 4)))]
+  "
+  {
+    operands[3] = gen_highpart (SImode, operands[0]);
+    operands[0] = gen_lowpart (SImode, operands[0]);
+    operands[1] = gen_lowpart (SImode, operands[1]);
+    operands[4] = gen_highpart (SImode, operands[2]);
+    operands[2] = gen_lowpart (SImode, operands[2]);
+  }"
+  [(set_attr "length" "8")
+   (set_attr "predicable" "yes")
+   (set_attr "predicable_short_it" "no")
+   (set_attr "type" "multiple")]
+)
+
+(define_insn_and_split "*iordi_notsesidi_di"
+  [(set (match_operand:DI 0 "s_register_operand" "=&r,&r")
+	(ior:DI (not:DI (sign_extend:DI
+			 (match_operand:SI 2 "s_register_operand" "r,r")))
+		(match_operand:DI 1 "s_register_operand" "0,r")))]
+  "TARGET_THUMB2"
+  "#"
+  "TARGET_THUMB2 && reload_completed"
+  [(set (match_dup 0) (ior:SI (not:SI (match_dup 2)) (match_dup 1)))
+   (set (match_dup 3) (ior:SI (not:SI
+				(ashiftrt:SI (match_dup 2) (const_int 31)))
+			       (match_dup 4)))]
+  "
+  {
+    operands[3] = gen_highpart (SImode, operands[0]);
+    operands[0] = gen_lowpart (SImode, operands[0]);
+    operands[4] = gen_highpart (SImode, operands[1]);
+    operands[1] = gen_lowpart (SImode, operands[1]);
+  }"
+  [(set_attr "length" "8")
+   (set_attr "predicable" "yes")
+   (set_attr "predicable_short_it" "no")
+   (set_attr "type" "multiple")]
+)
+
 (define_insn "*orsi_notsi_si"
   [(set (match_operand:SI 0 "s_register_operand" "=r")
 	(ior:SI (not:SI (match_operand:SI 2 "s_register_operand" "r"))
@@ -1409,7 +1565,8 @@
 		      (match_operand 5 "" "")
 		      (match_operand 6 "" "")))]
   "TARGET_THUMB2
-   && (INTVAL (operands[2]) >= 0 && INTVAL (operands[2]) < 32)"
+   && (INTVAL (operands[2]) >= 0 && INTVAL (operands[2]) < 32)
+   && peep2_reg_dead_p (2, operands[0])"
   [(parallel [(set (match_dup 0)
 		   (compare:CC_NOOV (ashift:SI (match_dup 1) (match_dup 2))
 				    (const_int 0)))
@@ -1437,7 +1594,8 @@
 		      (match_operand 5 "" "")
 		      (match_operand 6 "" "")))]
   "TARGET_THUMB2
-   && (INTVAL (operands[2]) > 0 && INTVAL (operands[2]) < 32)"
+   && (INTVAL (operands[2]) > 0 && INTVAL (operands[2]) < 32)
+   && peep2_reg_dead_p (2, operands[0])"
   [(parallel [(set (match_dup 0)
 		   (compare:CC_NOOV (ashift:SI (match_dup 1) (match_dup 2))
 				    (const_int 0)))

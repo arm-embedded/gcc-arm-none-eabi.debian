@@ -1,6 +1,6 @@
 // class template regex -*- C++ -*-
 
-// Copyright (C) 2013-2014 Free Software Foundation, Inc.
+// Copyright (C) 2013-2015 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -67,7 +67,6 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       _S_token_or,
       _S_token_closure0,
       _S_token_closure1,
-      _S_token_ungreedy,
       _S_token_line_begin,
       _S_token_line_end,
       _S_token_word_bound, // neg if _M_value[0] == 'n'
@@ -96,11 +95,19 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 		  : _M_awk_escape_tbl),
     _M_spec_char(_M_is_ecma()
 		 ? _M_ecma_spec_char
-		 : _M_is_basic()
+		 : _M_flags & regex_constants::basic
 		 ? _M_basic_spec_char
-		 : _M_extended_spec_char),
+		 : _M_flags & regex_constants::extended
+		 ? _M_extended_spec_char
+		 : _M_flags & regex_constants::grep
+		 ?  ".[\\*^$\n"
+		 : _M_flags & regex_constants::egrep
+		 ? ".[\\()*+?{|^$\n"
+		 : _M_flags & regex_constants::awk
+		 ? _M_extended_spec_char
+		 : nullptr),
     _M_at_bracket_start(false)
-    { }
+    { __glibcxx_assert(_M_spec_char); }
 
   protected:
     const char*
@@ -138,6 +145,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     { return _M_flags & regex_constants::awk; }
 
   protected:
+    // TODO: Make them static in the next abi change.
     const std::pair<char, _TokenT> _M_token_tbl[9] =
       {
 	{'^', _S_token_line_begin},
