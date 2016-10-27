@@ -5,7 +5,7 @@ Index: gcc-arm-none-eabi.git/src/gcc/Makefile.in
 ===================================================================
 --- gcc-arm-none-eabi.git.orig/src/gcc/Makefile.in
 +++ gcc-arm-none-eabi.git/src/gcc/Makefile.in
-@@ -2204,30 +2204,8 @@ s-tm-texi: $(srcdir)/doc/../doc/tm.texi
+@@ -2250,30 +2250,8 @@ s-tm-texi: $(srcdir)/doc/../doc/tm.texi
  # \r is not portable to Solaris tr, therefore we have a special
  # case for ASCII.  We use \r for other encodings like EBCDIC.
  s-tm-texi: build/genhooks$(build_exeext) $(srcdir)/doc/tm.texi.in
@@ -36,5 +36,5 @@ Index: gcc-arm-none-eabi.git/src/gcc/Makefile.in
 +	cat $(srcdir)/doc/tm.texi.in > tmp-tm.texi
 +	$(STAMP) $@
  
- GTFILES = $(CPP_ID_DATA_H) $(srcdir)/input.h $(srcdir)/coretypes.h \
-   $(host_xm_file_list) \
+ gimple-match.c: s-match gimple-match-head.c ; @true
+ generic-match.c: s-match generic-match-head.c ; @true
