@@ -1,6 +1,7 @@
 gcc-arm-none-eabi (15:5.4.1+svn241155-1) unstable; urgency=medium
 
-  * Imported Upstream version 5.4.1+svn241155
+  * Imported Upstream version 5.4.1+svn241155 (Closes: #831142)
+  * Update patches
 
  -- Agustin Henze <tin@debian.org>  Fri, 14 Oct 2016 08:12:07 -0300
 
