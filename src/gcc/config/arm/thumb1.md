@@ -1,5 +1,5 @@
 ;; ARM Thumb-1 Machine Description
-;; Copyright (C) 2007-2015 Free Software Foundation, Inc.
+;; Copyright (C) 2007-2016 Free Software Foundation, Inc.
 ;;
 ;; This file is part of GCC.
 ;;
@@ -629,8 +629,9 @@
     case 2:
       operands[1] = GEN_INT (- INTVAL (operands[1]));
       return \"movs\\t%Q0, %1\;rsbs\\t%Q0, %Q0, #0\;asrs\\t%R0, %Q0, #31\";
-    case 3: if (!TARGET_HAVE_MOVT) gcc_unreachable ();
-	    return \"movw\\t%Q0, %L1\;movs\\tR0, #0\";
+    case 3:
+      gcc_assert (TARGET_HAVE_MOVT);
+      return \"movw\\t%Q0, %L1\;movs\\tR0, #0\";
     case 4:
       return \"ldmia\\t%1, {%0, %H0}\";
     case 5:
@@ -766,7 +767,7 @@
     case 3: return \"mov	%0, %1\";
     case 4: return \"mov	%0, %1\";
     case 5: return \"movs	%0, %1\";
-    case 6: if (!TARGET_HAVE_MOVT) gcc_unreachable ();
+    case 6: gcc_assert (TARGET_HAVE_MOVT);
 	    return \"movw	%0, %L1\";
     default: gcc_unreachable ();
     case 1:
@@ -993,11 +994,11 @@
   DONE;
 })
 
-;; A pattern for the cb(n)z instruction added in ARMv8-M baseline profile,
+;; A pattern for the CB(N)Z instruction added in ARMv8-M Baseline profile,
 ;; adapted from cbranchsi4_insn.  Modifying cbranchsi4_insn instead leads to
 ;; code generation difference for ARMv6-M because the minimum length of the
-;; instruction becomes 2 even for it due to a limitation in genattrtab's
-;; handling of pc in the length condition.
+;; instruction becomes 2 even for ARMv6-M due to a limitation in genattrtab's
+;; handling of PC in the length condition.
 (define_insn "thumb1_cbz"
   [(set (pc) (if_then_else
 	      (match_operator 0 "equality_operator"
@@ -1005,7 +1006,7 @@
 		(const_int 0)])
 	      (label_ref (match_operand 2 "" ""))
 	      (pc)))]
-  "TARGET_THUMB1 && TARGET_HAVE_MOVT"
+  "TARGET_THUMB1 && TARGET_HAVE_CBZ"
 {
   if (get_attr_length (insn) == 2)
     {
@@ -1047,7 +1048,7 @@
 	{
 	case 4:  return "b%d0\t%l2";
 	case 6:  return "b%D0\t.LCB%=;b\t%l2\t%@long jump\n.LCB%=:";
-	case 8: return "b%D0\t.LCB%=;bl\t%l2\t%@far jump\n.LCB%=:";
+	case 8:  return "b%D0\t.LCB%=;bl\t%l2\t%@far jump\n.LCB%=:";
 	default: gcc_unreachable ();
 	}
     }
@@ -1060,8 +1061,7 @@
    (set (attr "length")
 	(if_then_else
 	    (and (ge (minus (match_dup 2) (pc)) (const_int 2))
-		 (le (minus (match_dup 2) (pc)) (const_int 128))
-		 (not (match_test "which_alternative")))
+		 (le (minus (match_dup 2) (pc)) (const_int 128)))
 	    (const_int 2)
 	    (if_then_else
 		(and (ge (minus (match_dup 2) (pc)) (const_int -250))
@@ -1898,13 +1898,11 @@
     return thumb1_unexpanded_epilogue ();
   "
   ; Length is absolute worst case, when using CMSE and if this is an entry
-  ; function an extra 4 (msr) to 8 (vmsr) extra might be added.
+  ; function an extra 4 (MSR) bytes will be added.
   [(set (attr "length")
 	(if_then_else
 	 (match_test "IS_CMSE_ENTRY (arm_current_func_type ())")
-	 (if_then_else (match_test "TARGET_HARD_FLOAT && TARGET_VFP")
-	  (const_int 52)
-	  (const_int 48))
+	 (const_int 48)
 	 (const_int 44)))
    (set_attr "type" "block")
    ;; We don't clobber the conditions, but the potential length of this

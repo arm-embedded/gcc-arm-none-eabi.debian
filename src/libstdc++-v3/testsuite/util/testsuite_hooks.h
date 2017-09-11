@@ -1,7 +1,7 @@
 // -*- C++ -*-
 // Utility subroutines for the C++ library testsuite. 
 //
-// Copyright (C) 2000-2015 Free Software Foundation, Inc.
+// Copyright (C) 2000-2016 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -65,6 +65,13 @@
 # include <unistd.h>
 #else
 # define unlink(x)
+#endif
+
+#if defined __FreeBSD__ || defined __DragonFly__ || defined __NetBSD__
+# define ISO_8859(part,langTERR) #langTERR ".ISO8859-" #part
+#else
+# define ISO_8859(part,langTERR) ((part) == 15 ?\
+         #langTERR ".ISO8859-" #part "@euro" : #langTERR ".ISO8859-" #part)
 #endif
 
 namespace __gnu_test
@@ -226,9 +233,9 @@ namespace __gnu_test
   private:
     static unsigned int _M_count;
   };
-  
-  // An class of objects that can be used for validating various
-  // behaviours and guarantees of containers and algorithms defined in
+
+  // A class of objects that can be used for validating various
+  // behaviors and guarantees of containers and algorithms defined in
   // the standard library.
   class copy_tracker
   {

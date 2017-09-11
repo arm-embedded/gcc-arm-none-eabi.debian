@@ -1,5 +1,5 @@
 /* Definitions for option handling for ARM.
-   Copyright (C) 1991-2015 Free Software Foundation, Inc.
+   Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
    This file is part of GCC.
 
@@ -24,6 +24,8 @@
 
 #ifndef ARM_OPTS_H
 #define ARM_OPTS_H
+
+#include "arm-flags.h"
 
 /* The various ARM cores.  */
 enum processor_type

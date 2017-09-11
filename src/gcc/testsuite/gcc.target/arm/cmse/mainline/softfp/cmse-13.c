@@ -20,15 +20,6 @@ foo (int a)
 /* { dg-final { scan-assembler "\n\tmov\tr1, r4" } } */
 /* { dg-final { scan-assembler-not "\n\tmov\tr2, r4\n\tmov\tr3, r4" } } */
 
-/* { dg-final { scan-assembler "vmov\.f64\td0, #1\.0" } } */
-/* { dg-final { scan-assembler "vmov\.f64\td1, #1\.0" } } */
-/* { dg-final { scan-assembler "vmov\.f64\td2, #1\.0" } } */
-/* { dg-final { scan-assembler "vmov\.f64\td3, #1\.0" } } */
-/* { dg-final { scan-assembler "vmov\.f64\td4, #1\.0" } } */
-/* { dg-final { scan-assembler "vmov\.f64\td5, #1\.0" } } */
-/* { dg-final { scan-assembler "vmov\.f64\td6, #1\.0" } } */
-/* { dg-final { scan-assembler "vmov\.f64\td7, #1\.0" } } */
-
 /* Now we check that we use the correct intrinsic to call.  */
 /* { dg-final { scan-assembler "bl\t__gnu_cmse_nonsecure_call" } } */
 

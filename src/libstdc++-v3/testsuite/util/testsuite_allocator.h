@@ -1,7 +1,7 @@
 // -*- C++ -*-
 // Testing allocator for the C++ library testsuite.
 //
-// Copyright (C) 2002-2015 Free Software Foundation, Inc.
+// Copyright (C) 2002-2016 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -287,7 +287,7 @@ namespace __gnu_test
 
       Alloc& base() { return *this; }
       const Alloc& base() const  { return *this; }
-      void swap_base(Alloc& b) { swap(b, this->base()); }
+      void swap_base(Alloc& b) { using std::swap; swap(b, this->base()); }
 
     public:
       typedef typename check_consistent_alloc_value_type<Tp, Alloc>::value_type
@@ -297,6 +297,7 @@ namespace __gnu_test
 
 #if __cplusplus >= 201103L
       typedef std::true_type			propagate_on_container_swap;
+      typedef std::false_type			is_always_equal;
 #endif
 
       template<typename Tp1>
@@ -493,7 +494,7 @@ namespace __gnu_test
       SimpleAllocator() noexcept { }
 
       template <class T>
-        SimpleAllocator(const SimpleAllocator<T>& other) { }
+        SimpleAllocator(const SimpleAllocator<T>&) { }
 
       Tp *allocate(std::size_t n)
       { return std::allocator<Tp>().allocate(n); }
@@ -577,6 +578,7 @@ namespace __gnu_test
 
       T& operator*() const { return *value; }
       T* operator->() const { return value; }
+      T& operator[](difference_type n) const { return value[n]; }
 
       Derived& operator++() { ++value; return derived(); }
       Derived operator++(int) { Derived tmp(derived()); ++value; return tmp; }

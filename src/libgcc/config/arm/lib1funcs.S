@@ -1,7 +1,7 @@
 @ libgcc routines for ARM cpu.
 @ Division routines, written by Richard Earnshaw, (rearnsha@armltd.co.uk)
 
-/* Copyright (C) 1995-2015 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2016 Free Software Foundation, Inc.
 
 This file is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -127,6 +127,10 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 	 || defined (__OPTIMIZE_SIZE__)	\
 	 || !__ARM_ARCH_ISA_ARM))
 # define __prefer_thumb__
+#endif
+
+#if !__ARM_ARCH_ISA_ARM && __ARM_ARCH_ISA_THUMB == 1
+#define NOT_ISA_TARGET_32BIT 1
 #endif
 
 /* How to return from a function call depends on the architecture variant.  */
@@ -306,11 +310,12 @@ LSYM(Lend_fde):
 
 #ifdef __ARM_EABI__
 .macro THUMB_LDIV0 name signed
-#if !__ARM_ARCH_ISA_ARM && __ARM_ARCH_ISA_THUMB == 1
+#ifdef NOT_ISA_TARGET_32BIT
 
 	push	{r0, lr}
 	mov	r0, #0
 	bl	SYM(__aeabi_idiv0)
+	@ We know we are not on armv4t, so pop pc is safe.
 	pop	{r1, pc}
 
 #elif defined(__thumb2__)
@@ -457,7 +462,7 @@ _L__\name:
 
 #else /* !(__INTERWORKING_STUBS__ || __thumb2__) */
 
-#if !__ARM_ARCH_ISA_ARM && __ARM_ARCH_ISA_THUMB == 1
+#ifdef NOT_ISA_TARGET_32BIT
 #define EQUIV .thumb_set
 #else
 .macro	ARM_FUNC_START name sp_section=
@@ -489,7 +494,7 @@ SYM (__\name):
 #endif
 .endm
 
-#if __ARM_ARCH_ISA_ARM || __ARM_ARCH_ISA_THUMB != 1
+#ifndef NOT_ISA_TARGET_32BIT
 .macro	ARM_FUNC_ALIAS new old
 	.globl	SYM (__\new)
 	EQUIV	SYM (__\new), SYM (__\old)
@@ -926,8 +931,8 @@ LSYM(Lover7):
 LSYM(Lgot_result):
 .endm
 
-#if defined(__prefer_thumb__) && !defined(__OPTIMIZE_SIZE__)
 /* If performance is preferred, the following functions are provided.  */
+#if defined(__prefer_thumb__) && !defined(__OPTIMIZE_SIZE__)
 
 /* Branch to div(n), and jump to label if curbit is lo than divisior.  */
 .macro BranchToDiv n, label
@@ -1115,9 +1120,9 @@ LSYM(udivsi3_skip_div0_test):
 	pop	{ work }
 	RET
 
+/* Implementation of aeabi_uidiv for ARMv6m.  This version is only
+   used in ARMv6-M when we need an efficient implementation.  */
 #else
-	/* Implementation of aeabi_uidiv for ARMv6m.  This version is only
-	   used in ARMv6-M when we need an efficient implementation.  */
 LSYM(udivsi3_skip_div0_test):
 	THUMB1_Div_Positive
 
@@ -1303,9 +1308,10 @@ LSYM(Lover11):
 LSYM(Lover12):
 	pop	{ work }
 	RET
+
+/* Implementation of aeabi_idiv for ARMv6m.  This version is only
+   used in ARMv6-M when we need an efficient implementation.  */
 #else
-	/* Implementation of aeabi_idiv for ARMv6m.  This version is only
-	   used in ARMv6-M when we need an efficient implementation.  */
 LSYM(divsi3_skip_div0_test):
 	cpy	curbit, dividend
 	orr	curbit, divisor
@@ -1521,23 +1527,30 @@ LSYM(Lover12):
 #define SIGFPE	8
 
 #ifdef __ARM_EABI__
+	cfi_start	__aeabi_ldiv0, LSYM(Lend_aeabi_ldiv0)
 	WEAK aeabi_idiv0
 	WEAK aeabi_ldiv0
 	ARM_FUNC_START aeabi_idiv0
 	ARM_FUNC_START aeabi_ldiv0
+	do_push	{r1, lr}
+98:	cfi_push 98b - __aeabi_ldiv0, 0xe, -0x4, 0x8
 #else
+	cfi_start	__div0, LSYM(Lend_div0)
 	ARM_FUNC_START div0
+	do_push	{r1, lr}
+98:	cfi_push 98b - __div0, 0xe, -0x4, 0x8
 #endif
 
-	do_push	{r1, lr}
 	mov	r0, #SIGFPE
 	bl	SYM(raise) __PLT__
-	RETLDM	r1
+	RETLDM	r1 unwind=98b
 
 #ifdef __ARM_EABI__
+	cfi_end	LSYM(Lend_aeabi_ldiv0)
 	FUNC_END aeabi_ldiv0
 	FUNC_END aeabi_idiv0
 #else
+	cfi_end	LSYM(Lend_div0)
 	FUNC_END div0
 #endif
 	
@@ -1686,14 +1699,15 @@ LSYM(Lover12):
 
 #endif /* __symbian__ */
 
-#if ((__ARM_ARCH__ > 5) && (__ARM_ARCH_ISA_ARM || __ARM_ARCH_ISA_THUMB != 1)) \
-    || defined(__ARM_ARCH_5E__) || defined(__ARM_ARCH_5TE__) \
-    || defined(__ARM_ARCH_5TEJ__)
+#if (__ARM_ARCH_ISA_THUMB == 2	\
+     || (__ARM_ARCH_ISA_ARM	\
+	 && (__ARM_ARCH__ > 5	\
+	     || (__ARM_ARCH__ == 5 && __ARM_ARCH_ISA_THUMB))))
 #define HAVE_ARM_CLZ 1
 #endif
 
 #ifdef L_clzsi2
-#if !__ARM_ARCH_ISA_ARM && __ARM_ARCH_ISA_THUMB == 1
+#ifdef NOT_ISA_TARGET_32BIT
 FUNC_START clzsi2
 	mov	r1, #28
 	mov	r3, #1
@@ -1754,7 +1768,7 @@ ARM_FUNC_START clzsi2
 #ifdef L_clzdi2
 #if !defined(HAVE_ARM_CLZ)
 
-# if !__ARM_ARCH_ISA_ARM && __ARM_ARCH_ISA_THUMB == 1
+# ifdef NOT_ISA_TARGET_32BIT
 FUNC_START clzdi2
 	push	{r4, lr}
 # else
@@ -1779,7 +1793,7 @@ ARM_FUNC_START clzdi2
 	bl	__clzsi2
 # endif
 2:
-# if !__ARM_ARCH_ISA_ARM && __ARM_ARCH_ISA_THUMB == 1
+# ifdef NOT_ISA_TARGET_32BIT
 	pop	{r4, pc}
 # else
 	RETLDM	r4
@@ -1801,7 +1815,7 @@ ARM_FUNC_START clzdi2
 #endif /* L_clzdi2 */
 
 #ifdef L_ctzsi2
-#if !__ARM_ARCH_ISA_ARM && __ARM_ARCH_ISA_THUMB == 1
+#ifdef NOT_ISA_TARGET_32BIT
 FUNC_START ctzsi2
 	neg	r1, r0
 	and	r0, r0, r1
@@ -1916,7 +1930,7 @@ ARM_FUNC_START ctzsi2
 
 /* Don't bother with the old interworking routines for Thumb-2.  */
 /* ??? Maybe only omit these on "m" variants.  */
-#if __ARM_ARCH_ISA_ARM && __ARM_ARCH_ISA_THUMB == 1
+#if !defined(__thumb2__) && __ARM_ARCH_ISA_ARM
 
 #if defined L_interwork_call_via_rX
 
@@ -2150,13 +2164,23 @@ LSYM(Lchange_\register):
 
 #endif /* Arch supports thumb.  */
 
+.macro CFI_START_FUNCTION
+	.cfi_startproc
+	.cfi_remember_state
+.endm
+
+.macro CFI_END_FUNCTION
+	.cfi_restore_state
+	.cfi_endproc
+.endm
+
 #ifndef __symbian__
 /* The condition here must match the one in gcc/config/arm/elf.h.  */
-#if __ARM_ARCH_ISA_ARM || __ARM_ARCH_ISA_THUMB != 1
+#ifndef NOT_ISA_TARGET_32BIT
 #include "ieee754-df.S"
 #include "ieee754-sf.S"
 #include "bpabi.S"
-#else /* !__ARM_ARCH_ISA_ARM && __ARM_ARCH_ISA_THUMB == 1 */
+#else /* NOT_ISA_TARGET_32BIT */
 #include "bpabi-v6m.S"
-#endif /* !__ARM_ARCH_ISA_ARM && __ARM_ARCH_ISA_THUMB == 1 */
+#endif /* NOT_ISA_TARGET_32BIT */
 #endif /* !__symbian__ */

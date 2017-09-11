@@ -1,4 +1,4 @@
-/* ARMV8-M Secure Extensions intrinsics include file.
+/* ARMv8-M Secure Extensions intrinsics include file.
 
    Copyright (C) 2015-2016 Free Software Foundation, Inc.
    Contributed by ARM Ltd.
@@ -99,13 +99,13 @@ typedef union {
   unsigned value;
 } cmse_address_info_t;
 
-#endif
+#endif /* __ARM_BIG_ENDIAN */
 
-#define cmse_TT_fptr(p) (cmse_TT_fptr_generic ((__cmse_fptr)p))
+#define cmse_TT_fptr(p) (__cmse_TT_fptr ((__cmse_fptr)(p)))
 
 typedef void (*__cmse_fptr)(void);
 
-#define CMSE_TT_ASM(flags) \
+#define __CMSE_TT_ASM(flags) \
 { \
   cmse_address_info_t __result; \
    __asm__ ("tt" # flags " %0,%1" \
@@ -117,53 +117,53 @@ typedef void (*__cmse_fptr)(void);
 
 __extension__ static __inline __attribute__ ((__always_inline__))
 cmse_address_info_t
-cmse_TT_fptr_generic (__cmse_fptr __p)
-CMSE_TT_ASM ()
+__cmse_TT_fptr (__cmse_fptr __p)
+__CMSE_TT_ASM ()
 
 __extension__ static __inline __attribute__ ((__always_inline__))
 cmse_address_info_t
 cmse_TT (void *__p)
-CMSE_TT_ASM ()
+__CMSE_TT_ASM ()
 
-#define cmse_TTT_fptr(p) (cmse_TTT_fptr_generic ((__cmse_fptr)p))
+#define cmse_TTT_fptr(p) (__cmse_TTT_fptr ((__cmse_fptr)(p)))
 
 __extension__ static __inline __attribute__ ((__always_inline__))
 cmse_address_info_t
-cmse_TTT_fptr_generic (__cmse_fptr __p)
-CMSE_TT_ASM (t)
+__cmse_TTT_fptr (__cmse_fptr __p)
+__CMSE_TT_ASM (t)
 
 __extension__ static __inline __attribute__ ((__always_inline__))
 cmse_address_info_t
 cmse_TTT (void *__p)
-CMSE_TT_ASM (t)
+__CMSE_TT_ASM (t)
 
 #if __ARM_FEATURE_CMSE & 2
 
-#define cmse_TTA_fptr(p) (cmse_TTA_fptr_generic ((__cmse_fptr)p))
+#define cmse_TTA_fptr(p) (__cmse_TTA_fptr ((__cmse_fptr)(p)))
 
 __extension__ static __inline __attribute__ ((__always_inline__))
 cmse_address_info_t
-cmse_TTA_fptr_generic (__cmse_fptr __p)
-CMSE_TT_ASM (a)
+__cmse_TTA_fptr (__cmse_fptr __p)
+__CMSE_TT_ASM (a)
 
 __extension__ static __inline __attribute__ ((__always_inline__))
 cmse_address_info_t
 cmse_TTA (void *__p)
-CMSE_TT_ASM (a)
+__CMSE_TT_ASM (a)
 
-#define cmse_TTAT_fptr(p) (cmse_TTAT_fptr_generic ((__cmse_fptr)p))
+#define cmse_TTAT_fptr(p) (__cmse_TTAT_fptr ((__cmse_fptr)(p)))
 
 __extension__ static __inline cmse_address_info_t
 __attribute__ ((__always_inline__))
-cmse_TTAT_fptr_generic (__cmse_fptr __p)
-CMSE_TT_ASM (at)
+__cmse_TTAT_fptr (__cmse_fptr __p)
+__CMSE_TT_ASM (at)
 
 __extension__ static __inline cmse_address_info_t
 __attribute__ ((__always_inline__))
 cmse_TTAT (void *__p)
-CMSE_TT_ASM (at)
+__CMSE_TT_ASM (at)
 
-//TODO: diagnose use outside cmse_nonsecure_entry functions
+/* FIXME: diagnose use outside cmse_nonsecure_entry functions.  */
 __extension__ static __inline int __attribute__ ((__always_inline__))
 cmse_nonsecure_caller (void)
 {
@@ -174,7 +174,11 @@ cmse_nonsecure_caller (void)
 #define CMSE_MPU_NONSECURE	16
 #define CMSE_NONSECURE		18
 
-#endif
+#define cmse_nsfptr_create(p) ((typeof ((p))) ((intptr_t) (p) & ~1))
+
+#define cmse_is_nsfptr(p) (!((intptr_t) (p) & 1))
+
+#endif /* __ARM_FEATURE_CMSE & 2 */
 
 #define CMSE_MPU_UNPRIV		4
 #define CMSE_MPU_READWRITE	1
@@ -184,16 +188,12 @@ __extension__ void *
 cmse_check_address_range (void *, size_t, int);
 
 #define cmse_check_pointed_object(p, f) \
-  ((typeof (p)) cmse_check_address_range (p, sizeof (*p), f))
+  ((typeof ((p))) cmse_check_address_range ((p), sizeof (*(p)), (f)))
 
-#define cmse_nsfptr_create(p) ((typeof (p)) ((intptr_t) p & ~1))
-
-#define cmse_is_nsfptr(p) (!((intptr_t) p & 1))
-
-#endif /* ifdef __ARM_FEATURE_CMSE.  */
+#endif /* __ARM_FEATURE_CMSE & 1 */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ifndef _GCC_ARM_CMSE_H.  */
+#endif /* _GCC_ARM_CMSE_H */

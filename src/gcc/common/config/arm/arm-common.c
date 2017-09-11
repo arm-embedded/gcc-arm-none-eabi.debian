@@ -1,5 +1,5 @@
 /* Common hooks for ARM.
-   Copyright (C) 1991-2015 Free Software Foundation, Inc.
+   Copyright (C) 1991-2016 Free Software Foundation, Inc.
 
    This file is part of GCC.
 
@@ -95,6 +95,49 @@ arm_rewrite_mcpu (int argc, const char **argv)
 {
   gcc_assert (argc);
   return arm_rewrite_selected_cpu (argv[argc - 1]);
+}
+
+struct arm_arch_core_flag
+{
+  const char *const name;
+  const arm_feature_set flags;
+};
+
+static const struct arm_arch_core_flag arm_arch_core_flags[] =
+{
+#undef ARM_CORE
+#define ARM_CORE(NAME, X, IDENT, ARCH, FLAGS, COSTS) \
+  {NAME, FLAGS},
+#include "config/arm/arm-cores.def"
+#undef ARM_CORE
+#undef ARM_ARCH
+#define ARM_ARCH(NAME, CORE, ARCH, FLAGS) \
+  {NAME, FLAGS},
+#include "config/arm/arm-arches.def"
+#undef ARM_ARCH
+};
+
+/* Called by the driver to check whether the target denoted by current
+   command line options is a Thumb-only target.  ARGV is an array of
+   -march and -mcpu values (ie. it contains the rhs after the equal
+   sign) and we use the last one of them to make a decision.  The
+   number of elements in ARGV is given in ARGC.  */
+const char *
+arm_target_thumb_only (int argc, const char **argv)
+{
+  unsigned int opt;
+
+  if (argc)
+    {
+      for (opt = 0; opt < (ARRAY_SIZE (arm_arch_core_flags)); opt++)
+	if ((strcmp (argv[argc - 1], arm_arch_core_flags[opt].name) == 0)
+	    && !ARM_FSET_HAS_CPU1(arm_arch_core_flags[opt].flags, FL_NOTM))
+	  return "-mthumb";
+
+      return NULL;
+    }
+  else
+    return NULL;
 }
 
 #undef ARM_CPU_NAME_LENGTH

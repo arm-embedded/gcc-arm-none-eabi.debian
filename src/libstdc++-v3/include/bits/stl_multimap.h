@@ -1,6 +1,6 @@
 // Multimap implementation -*- C++ -*-
 
-// Copyright (C) 2001-2015 Free Software Foundation, Inc.
+// Copyright (C) 2001-2016 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -158,9 +158,9 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        *  @brief  Default constructor creates no elements.
        */
       multimap()
-#if __cplusplus >= 201103L
-      noexcept(is_nothrow_default_constructible<allocator_type>::value)
-#endif
+      _GLIBCXX_NOEXCEPT_IF(
+	  is_nothrow_default_constructible<allocator_type>::value
+	  && is_nothrow_default_constructible<key_compare>::value)
       : _M_t() { }
 
       /**
@@ -704,9 +704,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       void
       swap(multimap& __x)
-#if __cplusplus >= 201103L
-      noexcept(_Alloc_traits::_S_nothrow_swap())
-#endif
+      _GLIBCXX_NOEXCEPT_IF(__is_nothrow_swappable<_Compare>::value)
       { _M_t.swap(__x._M_t); }
 
       /**
@@ -824,8 +822,8 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       template<typename _Kt>
 	auto
 	lower_bound(const _Kt& __x)
-	-> decltype(_M_t._M_lower_bound_tr(__x))
-	{ return _M_t._M_lower_bound_tr(__x); }
+	-> decltype(iterator(_M_t._M_lower_bound_tr(__x)))
+	{ return iterator(_M_t._M_lower_bound_tr(__x)); }
 #endif
       //@}
 
@@ -849,8 +847,8 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       template<typename _Kt>
 	auto
 	lower_bound(const _Kt& __x) const
-	-> decltype(_M_t._M_lower_bound_tr(__x))
-	{ return _M_t._M_lower_bound_tr(__x); }
+	-> decltype(const_iterator(_M_t._M_lower_bound_tr(__x)))
+	{ return const_iterator(_M_t._M_lower_bound_tr(__x)); }
 #endif
       //@}
 
@@ -869,8 +867,8 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       template<typename _Kt>
 	auto
 	upper_bound(const _Kt& __x)
-	-> decltype(_M_t._M_upper_bound_tr(__x))
-	{ return _M_t._M_upper_bound_tr(__x); }
+	-> decltype(iterator(_M_t._M_upper_bound_tr(__x)))
+	{ return iterator(_M_t._M_upper_bound_tr(__x)); }
 #endif
       //@}
 
@@ -889,8 +887,8 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       template<typename _Kt>
 	auto
 	upper_bound(const _Kt& __x) const
-	-> decltype(_M_t._M_upper_bound_tr(__x))
-	{ return _M_t._M_upper_bound_tr(__x); }
+	-> decltype(const_iterator(_M_t._M_upper_bound_tr(__x)))
+	{ return const_iterator(_M_t._M_upper_bound_tr(__x)); }
 #endif
       //@}
 
@@ -916,8 +914,8 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       template<typename _Kt>
 	auto
 	equal_range(const _Kt& __x)
-	-> decltype(_M_t._M_equal_range_tr(__x))
-	{ return _M_t._M_equal_range_tr(__x); }
+	-> decltype(pair<iterator, iterator>(_M_t._M_equal_range_tr(__x)))
+	{ return pair<iterator, iterator>(_M_t._M_equal_range_tr(__x)); }
 #endif
       //@}
 
@@ -943,8 +941,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       template<typename _Kt>
 	auto
 	equal_range(const _Kt& __x) const
-	-> decltype(_M_t._M_equal_range_tr(__x))
-	{ return _M_t._M_equal_range_tr(__x); }
+	-> decltype(pair<const_iterator, const_iterator>(
+	      _M_t._M_equal_range_tr(__x)))
+	{
+	  return pair<const_iterator, const_iterator>(
+	      _M_t._M_equal_range_tr(__x));
+	}
 #endif
       //@}
 
@@ -1025,6 +1027,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
     inline void
     swap(multimap<_Key, _Tp, _Compare, _Alloc>& __x,
          multimap<_Key, _Tp, _Compare, _Alloc>& __y)
+    _GLIBCXX_NOEXCEPT_IF(noexcept(__x.swap(__y)))
     { __x.swap(__y); }
 
 _GLIBCXX_END_NAMESPACE_CONTAINER

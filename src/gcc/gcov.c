@@ -1,6 +1,6 @@
 /* Gcov.c: prepend line execution counts and branch probabilities to a
    source file.
-   Copyright (C) 1990-2015 Free Software Foundation, Inc.
+   Copyright (C) 1990-2016 Free Software Foundation, Inc.
    Contributed by James E. Wilson of Cygnus Support.
    Mangled by Bob Manson of Cygnus Support.
    Mangled further by Nathan Sidwell <nathan@codesourcery.com>
@@ -469,7 +469,7 @@ print_usage (int error_p)
   FILE *file = error_p ? stderr : stdout;
   int status = error_p ? FATAL_EXIT_CODE : SUCCESS_EXIT_CODE;
 
-  fnotice (file, "Usage: gcov [OPTION]... SOURCE|OBJ...\n\n");
+  fnotice (file, "Usage: gcov [OPTION...] SOURCE|OBJ...\n\n");
   fnotice (file, "Print code coverage information.\n\n");
   fnotice (file, "  -h, --help                      Print this help, then exit\n");
   fnotice (file, "  -a, --all-blocks                Show information for every basic block\n");
@@ -500,7 +500,7 @@ static void
 print_version (void)
 {
   fnotice (stdout, "gcov %s%s\n", pkgversion_string, version_string);
-  fprintf (stdout, "Copyright %s 2015 Free Software Foundation, Inc.\n",
+  fprintf (stdout, "Copyright %s 2016 Free Software Foundation, Inc.\n",
 	   _("(C)"));
   fnotice (stdout,
 	   _("This is free software; see the source for copying conditions.\n"
@@ -602,31 +602,6 @@ process_args (int argc, char **argv)
   return optind;
 }
 
-/* Get the name of the gcov file.  The return value must be free'd.
-
-   It appends the '.gcov' extension to the *basename* of the file.
-   The resulting file name will be in PWD.
-
-   e.g.,
-   input: foo.da,       output: foo.da.gcov
-   input: a/b/foo.cc,   output: foo.cc.gcov  */
-
-static char *
-get_gcov_intermediate_filename (const char *file_name)
-{
-  const char *gcov = ".gcov";
-  char *result;
-  const char *cptr;
-
-  /* Find the 'basename'.  */
-  cptr = lbasename (file_name);
-
-  result = XNEWVEC (char, strlen (cptr) + strlen (gcov) + 1);
-  sprintf (result, "%s%s", cptr, gcov);
-
-  return result;
-}
-
 /* Output the result in intermediate format used by 'lcov'.
 
 The intermediate format contains a single file named 'foo.cc.gcov',
@@ -725,7 +700,7 @@ process_file (const char *file_name)
 
       fns = fn->next;
       fn->next = NULL;
-      if (fn->counts)
+      if (fn->counts || no_data_file)
 	{
 	  unsigned src = fn->src;
 	  unsigned line = fn->line;
@@ -792,7 +767,11 @@ output_gcov_file (const char *file_name, source_t *src)
       if (gcov_file)
         {
           fnotice (stdout, "Creating '%s'\n", gcov_file_name);
-          output_lines (gcov_file, src);
+
+	  if (flag_intermediate_format)
+	    output_intermediate_file (gcov_file, src);
+	  else
+	    output_lines (gcov_file, src);
           if (ferror (gcov_file))
             fnotice (stderr, "Error writing output file '%s'\n", gcov_file_name);
           fclose (gcov_file);
@@ -814,8 +793,6 @@ generate_results (const char *file_name)
   unsigned ix;
   source_t *src;
   function_t *fn;
-  FILE *gcov_intermediate_file = NULL;
-  char *gcov_intermediate_filename = NULL;
 
   for (ix = n_sources, src = sources; ix--; src++)
     if (src->num_lines)
@@ -845,20 +822,6 @@ generate_results (const char *file_name)
 	file_name = canonicalize_name (file_name);
     }
 
-  if (flag_gcov_file && flag_intermediate_format)
-    {
-      /* Open the intermediate file.  */
-      gcov_intermediate_filename =
-        get_gcov_intermediate_filename (file_name);
-      gcov_intermediate_file = fopen (gcov_intermediate_filename, "w");
-      if (!gcov_intermediate_file)
-        {
-          fnotice (stderr, "Cannot open intermediate output file %s\n",
-                   gcov_intermediate_filename);
-          return;
-        }
-    }
-
   for (ix = n_sources, src = sources; ix--; src++)
     {
       if (flag_relative_only)
@@ -881,21 +844,9 @@ generate_results (const char *file_name)
       total_executed += src->coverage.lines_executed;
       if (flag_gcov_file)
 	{
-          if (flag_intermediate_format)
-            /* Output the intermediate format without requiring source
-               files.  This outputs a section to a *single* file.  */
-            output_intermediate_file (gcov_intermediate_file, src);
-          else
-            output_gcov_file (file_name, src);
+	  output_gcov_file (file_name, src);
           fnotice (stdout, "\n");
         }
-    }
-
-  if (flag_gcov_file && flag_intermediate_format)
-    {
-      /* Now we've finished writing the intermediate file.  */
-      fclose (gcov_intermediate_file);
-      XDELETEVEC (gcov_intermediate_filename);
     }
 
   if (!file_name)
@@ -1846,7 +1797,7 @@ format_gcov (gcov_type top, gcov_type bottom, int dp)
 	}
     }
   else
-    sprintf (buffer, "%"PRId64, (int64_t)top);
+    sprintf (buffer, "%" PRId64, (int64_t)top);
 
   return buffer;
 }

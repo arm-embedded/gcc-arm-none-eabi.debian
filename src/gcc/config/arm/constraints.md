@@ -1,5 +1,5 @@
 ;; Constraint definitions for ARM and Thumb
-;; Copyright (C) 2006-2015 Free Software Foundation, Inc.
+;; Copyright (C) 2006-2016 Free Software Foundation, Inc.
 ;; Contributed by ARM Ltd.
 
 ;; This file is part of GCC.
@@ -21,7 +21,7 @@
 ;; The following register constraints have been used:
 ;; - in ARM/Thumb-2 state: t, w, x, y, z
 ;; - in Thumb state: h, b
-;; - in both states: l, c, k, q, US
+;; - in both states: l, c, k, q, Cs, Ts, US
 ;; In ARM state, 'l' is an alias for 'r'
 ;; 'f' and 'v' were previously used for FPA and MAVERICK registers.
 
@@ -446,6 +446,12 @@
   US is a symbol reference."
  (match_code "symbol_ref")
 )
+
+(define_memory_constraint "Uz"
+ "@internal
+  A memory access that is accessible as an LDC/STC operand"
+ (and (match_code "mem")
+      (match_test "arm_coproc_ldc_stc_legitimate_address (op)")))
 
 ;; We used to have constraint letters for S and R in ARM state, but
 ;; all uses of these now appear to have been removed.

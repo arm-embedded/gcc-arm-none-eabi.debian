@@ -1,5 +1,4 @@
 /* { dg-do compile } */
-/* { dg-require-effective-target arm_cmse_ok } */
 /* { dg-options "-mcmse" }  */
 
 struct span {

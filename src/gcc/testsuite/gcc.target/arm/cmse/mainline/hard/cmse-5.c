@@ -16,7 +16,6 @@ foo (void)
 /* { dg-final { scan-assembler "mov\tr1, lr" } } */
 /* { dg-final { scan-assembler "mov\tr2, lr" } } */
 /* { dg-final { scan-assembler "mov\tr3, lr" } } */
-/* { dg-final { scan-assembler "mov\tip, lr" } } */
 /* { dg-final { scan-assembler-not "vmov\.f32\ts0, #1\.0" } } */
 /* { dg-final { scan-assembler "vmov\.f32\ts1, #1\.0" } } */
 /* { dg-final { scan-assembler "vmov\.f64\td1, #1\.0" } } */
@@ -28,3 +27,12 @@ foo (void)
 /* { dg-final { scan-assembler "vmov\.f64\td7, #1\.0" } } */
 /* { dg-final { scan-assembler "msr\tAPSR_nzcvq, lr" { target { arm_arch_v8m_main_ok && { ! arm_dsp } } } } } */
 /* { dg-final { scan-assembler "msr\tAPSR_nzcvqg, lr" { target { arm_arch_v8m_main_ok && arm_dsp } } } } */
+/* { dg-final { scan-assembler "push\t{r4}" } } */
+/* { dg-final { scan-assembler "vmrs\tip, fpscr" } } */
+/* { dg-final { scan-assembler "movw\tr4, #65376" } } */
+/* { dg-final { scan-assembler "movt\tr4, #4095" } } */
+/* { dg-final { scan-assembler "and\tip, r4" } } */
+/* { dg-final { scan-assembler "vmsr\tfpscr, ip" } } */
+/* { dg-final { scan-assembler "pop\t{r4}" } } */
+/* { dg-final { scan-assembler "mov\tip, lr" } } */
+/* { dg-final { scan-assembler "bxns" } } */
