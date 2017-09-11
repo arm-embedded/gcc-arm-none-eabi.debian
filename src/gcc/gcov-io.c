@@ -1,5 +1,5 @@
 /* File format for coverage information
-   Copyright (C) 1996-2015 Free Software Foundation, Inc.
+   Copyright (C) 1996-2016 Free Software Foundation, Inc.
    Contributed by Bob Manson <manson@cygnus.com>.
    Completely remangled by Nathan Sidwell <nathan@codesourcery.com>.
 
@@ -372,8 +372,12 @@ gcov_write_string (const char *string)
   buffer = gcov_write_words (1 + alloc);
 
   buffer[0] = alloc;
-  buffer[alloc] = 0;
-  memcpy (&buffer[1], string, length);
+
+  if (alloc > 0)
+    {
+      buffer[alloc] = 0; /* place nul terminators.  */
+      memcpy (&buffer[1], string, length);
+    }
 }
 #endif
 

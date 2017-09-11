@@ -81,7 +81,7 @@ f5 (int i)
 /* { dg-output "\[^\n\r]*load of address \[^\n\r]* with insufficient space for an object of type 'unsigned int'\[^\n\r]*(\n|\r\n|\r)" } */
 /* { dg-output "\[^\n\r]*note: pointer points here\[^\n\r]*(\n|\r\n|\r)" } */
 /* { dg-output "\[^\n\r]*\[^\n\r]*(\n|\r\n|\r)" } */
-/* { dg-output "\[^\n\r]*\\^\[^\n\r]*(\n|\r\n|\r)" } */
+/* { dg-output "\[^\n\r]*\\^" } */
 
 int
 main (void)
@@ -93,5 +93,9 @@ main (void)
 #endif
   f4 (12);
   f5 (12);
+#ifdef __cplusplus
+  /* Stack may be smashed by f2/f3 above.  */
+  __builtin_exit (0);
+#endif
   return 0;
 }

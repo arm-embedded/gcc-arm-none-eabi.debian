@@ -1,7 +1,7 @@
 // { dg-options "-std=gnu++11" }
 
 //
-// Copyright (C) 2015 Free Software Foundation, Inc.
+// Copyright (C) 2015-2016 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -48,11 +48,33 @@ test02()
   VERIFY(std::regex_search("/abcd", rx));
 }
 
+// PR libstdc++/78236
+void
+test06()
+{
+  char const s[] = "afoo";
+  std::basic_regex<char> r("(f+)");
+  {
+    std::cregex_iterator i(s, s+sizeof(s), r);
+    std::cregex_iterator j(s, s+sizeof(s), r);
+    VERIFY(i == j);
+  }
+  // The iterator manipulation code must be repeated in the same scope
+  // to expose the undefined read during the execution of the ==
+  // operator (stack location reuse)
+  {
+    std::cregex_iterator i(s, s+sizeof(s), r);
+    std::cregex_iterator j;
+    VERIFY(!(i == j));
+  }
+}
+
 int
 main()
 {
   test01();
   test02();
+  test06();
   return 0;
 }
 

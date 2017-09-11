@@ -1,14 +1,13 @@
 /* { dg-do compile } */
-/* { dg-require-effective-target arm_cmse_ok } */
 /* { dg-skip-if "Testing exclusion of -mcmse" { arm-*-* } { "-mcmse" } { "" } }  */
 
 
-void __attribute__ ((cmse_nonsecure_call)) (*bar) (int);
-typedef void __attribute__ ((cmse_nonsecure_call)) baz (int);
+void __attribute__ ((cmse_nonsecure_call)) (*bar) (int); /* { dg-warning "attribute ignored without -mcmse option" } */
+typedef void __attribute__ ((cmse_nonsecure_call)) baz (int); /* { dg-warning "attribute ignored without -mcmse option" } */
 
 int __attribute__ ((cmse_nonsecure_entry))
 foo (int a, baz b)
-{
+{ /* { dg-warning "attribute ignored without -mcmse option" } */
   bar (a);
   b (a);
   return a + 1;

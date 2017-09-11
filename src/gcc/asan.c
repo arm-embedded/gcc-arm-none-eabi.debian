@@ -1,5 +1,5 @@
 /* AddressSanitizer, a fast memory error detector.
-   Copyright (C) 2012-2015 Free Software Foundation, Inc.
+   Copyright (C) 2012-2016 Free Software Foundation, Inc.
    Contributed by Kostya Serebryany <kcc@google.com>
 
 This file is part of GCC.
@@ -22,72 +22,41 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "hash-set.h"
-#include "machmode.h"
-#include "vec.h"
-#include "double-int.h"
-#include "input.h"
-#include "alias.h"
-#include "symtab.h"
-#include "options.h"
-#include "wide-int.h"
-#include "inchash.h"
+#include "backend.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
-#include "fold-const.h"
-#include "hash-table.h"
-#include "predict.h"
-#include "tm.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "cfganal.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
-#include "internal-fn.h"
-#include "gimple-expr.h"
-#include "is-a.h"
 #include "gimple.h"
+#include "cfghooks.h"
+#include "alloc-pool.h"
+#include "tree-pass.h"
+#include "tm_p.h"
+#include "stringpool.h"
+#include "tree-ssanames.h"
+#include "optabs.h"
+#include "emit-rtl.h"
+#include "cgraph.h"
+#include "gimple-pretty-print.h"
+#include "alias.h"
+#include "fold-const.h"
+#include "cfganal.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
-#include "calls.h"
 #include "varasm.h"
 #include "stor-layout.h"
 #include "tree-iterator.h"
-#include "hash-map.h"
-#include "plugin-api.h"
-#include "ipa-ref.h"
-#include "cgraph.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
-#include "tree-pass.h"
 #include "asan.h"
-#include "gimple-pretty-print.h"
-#include "target.h"
-#include "hashtab.h"
-#include "rtl.h"
-#include "flags.h"
-#include "statistics.h"
-#include "real.h"
-#include "fixed-value.h"
-#include "insn-config.h"
-#include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
-#include "emit-rtl.h"
-#include "stmt.h"
 #include "expr.h"
-#include "insn-codes.h"
-#include "optabs.h"
 #include "output.h"
-#include "tm_p.h"
 #include "langhooks.h"
-#include "alloc-pool.h"
 #include "cfgloop.h"
 #include "gimple-builder.h"
 #include "ubsan.h"
 #include "params.h"
 #include "builtins.h"
+#include "fnmatch.h"
 
 /* AddressSanitizer finds out-of-bounds and use-after-free bugs
    with <2x slowdown on average.
@@ -175,7 +144,7 @@ along with GCC; see the file COPYING3.  If not see
 
 	where '(...){n}' means the content inside the parenthesis occurs 'n'
 	times, with 'n' being the number of variables on the stack.
-     
+
      3/ The following 8 bytes contain the PC of the current function which
      will be used by the run-time library to print an error message.
 
@@ -272,6 +241,7 @@ along with GCC; see the file COPYING3.  If not see
 
 static unsigned HOST_WIDE_INT asan_shadow_offset_value;
 static bool asan_shadow_offset_computed;
+static vec<char *> sanitized_sections;
 
 /* Sets shadow offset to value in string VAL.  */
 
@@ -279,7 +249,7 @@ bool
 set_asan_shadow_offset (const char *val)
 {
   char *endp;
-  
+
   errno = 0;
 #ifdef HAVE_LONG_LONG
   asan_shadow_offset_value = strtoull (val, &endp, 0);
@@ -292,6 +262,40 @@ set_asan_shadow_offset (const char *val)
   asan_shadow_offset_computed = true;
 
   return true;
+}
+
+/* Set list of user-defined sections that need to be sanitized.  */
+
+void
+set_sanitized_sections (const char *sections)
+{
+  char *pat;
+  unsigned i;
+  FOR_EACH_VEC_ELT (sanitized_sections, i, pat)
+    free (pat);
+  sanitized_sections.truncate (0);
+
+  for (const char *s = sections; *s; )
+    {
+      const char *end;
+      for (end = s; *end && *end != ','; ++end);
+      size_t len = end - s;
+      sanitized_sections.safe_push (xstrndup (s, len));
+      s = *end ? end + 1 : end;
+    }
+}
+
+/* Checks whether section SEC should be sanitized.  */
+
+static bool
+section_sanitized_p (const char *sec)
+{
+  char *pat;
+  unsigned i;
+  FOR_EACH_VEC_ELT (sanitized_sections, i, pat)
+    if (fnmatch (pat, sec, FNM_PERIOD) == 0)
+      return true;
+  return false;
 }
 
 /* Returns Asan shadow offset.  */
@@ -338,21 +342,7 @@ struct asan_mem_ref
   HOST_WIDE_INT access_size;
 };
 
-static alloc_pool asan_mem_ref_alloc_pool;
-
-/* This creates the alloc pool used to store the instances of
-   asan_mem_ref that are stored in the hash table asan_mem_ref_ht.  */
-
-static alloc_pool
-asan_mem_ref_get_alloc_pool ()
-{
-  if (asan_mem_ref_alloc_pool == NULL)
-    asan_mem_ref_alloc_pool = create_alloc_pool ("asan_mem_ref",
-						 sizeof (asan_mem_ref),
-						 10);
-  return asan_mem_ref_alloc_pool;
-    
-}
+object_allocator <asan_mem_ref> asan_mem_ref_pool ("asan_mem_ref");
 
 /* Initializes an instance of asan_mem_ref.  */
 
@@ -372,8 +362,7 @@ asan_mem_ref_init (asan_mem_ref *ref, tree start, HOST_WIDE_INT access_size)
 static asan_mem_ref*
 asan_mem_ref_new (tree start, HOST_WIDE_INT access_size)
 {
-  asan_mem_ref *ref =
-    (asan_mem_ref *) pool_alloc (asan_mem_ref_get_alloc_pool ());
+  asan_mem_ref *ref = asan_mem_ref_pool.allocate ();
 
   asan_mem_ref_init (ref, start, access_size);
   return ref;
@@ -404,14 +393,10 @@ asan_mem_ref_get_end (const asan_mem_ref *ref, tree len)
   return asan_mem_ref_get_end (ref->start, len);
 }
 
-struct asan_mem_ref_hasher
-  : typed_noop_remove <asan_mem_ref>
+struct asan_mem_ref_hasher : nofree_ptr_hash <asan_mem_ref>
 {
-  typedef asan_mem_ref value_type;
-  typedef asan_mem_ref compare_type;
-
-  static inline hashval_t hash (const value_type *);
-  static inline bool equal (const value_type *, const compare_type *);
+  static inline hashval_t hash (const asan_mem_ref *);
+  static inline bool equal (const asan_mem_ref *, const asan_mem_ref *);
 };
 
 /* Hash a memory reference.  */
@@ -465,11 +450,7 @@ free_mem_ref_resources ()
   delete asan_mem_ref_ht;
   asan_mem_ref_ht = NULL;
 
-  if (asan_mem_ref_alloc_pool)
-    {
-      free_alloc_pool (asan_mem_ref_alloc_pool);
-      asan_mem_ref_alloc_pool = NULL;
-    }
+  asan_mem_ref_pool.release ();
 }
 
 /* Return true iff the memory reference REF has been instrumented.  */
@@ -606,218 +587,208 @@ get_mem_refs_of_builtin_call (const gcall *call,
     case BUILT_IN_STRLEN:
       source0 = gimple_call_arg (call, 0);
       len = gimple_call_lhs (call);
-      break ;
+      break;
 
     /* And now the __atomic* and __sync builtins.
        These are handled differently from the classical memory memory
        access builtins above.  */
 
     case BUILT_IN_ATOMIC_LOAD_1:
+      is_store = false;
+      /* FALLTHRU */
+    case BUILT_IN_SYNC_FETCH_AND_ADD_1:
+    case BUILT_IN_SYNC_FETCH_AND_SUB_1:
+    case BUILT_IN_SYNC_FETCH_AND_OR_1:
+    case BUILT_IN_SYNC_FETCH_AND_AND_1:
+    case BUILT_IN_SYNC_FETCH_AND_XOR_1:
+    case BUILT_IN_SYNC_FETCH_AND_NAND_1:
+    case BUILT_IN_SYNC_ADD_AND_FETCH_1:
+    case BUILT_IN_SYNC_SUB_AND_FETCH_1:
+    case BUILT_IN_SYNC_OR_AND_FETCH_1:
+    case BUILT_IN_SYNC_AND_AND_FETCH_1:
+    case BUILT_IN_SYNC_XOR_AND_FETCH_1:
+    case BUILT_IN_SYNC_NAND_AND_FETCH_1:
+    case BUILT_IN_SYNC_BOOL_COMPARE_AND_SWAP_1:
+    case BUILT_IN_SYNC_VAL_COMPARE_AND_SWAP_1:
+    case BUILT_IN_SYNC_LOCK_TEST_AND_SET_1:
+    case BUILT_IN_SYNC_LOCK_RELEASE_1:
+    case BUILT_IN_ATOMIC_EXCHANGE_1:
+    case BUILT_IN_ATOMIC_COMPARE_EXCHANGE_1:
+    case BUILT_IN_ATOMIC_STORE_1:
+    case BUILT_IN_ATOMIC_ADD_FETCH_1:
+    case BUILT_IN_ATOMIC_SUB_FETCH_1:
+    case BUILT_IN_ATOMIC_AND_FETCH_1:
+    case BUILT_IN_ATOMIC_NAND_FETCH_1:
+    case BUILT_IN_ATOMIC_XOR_FETCH_1:
+    case BUILT_IN_ATOMIC_OR_FETCH_1:
+    case BUILT_IN_ATOMIC_FETCH_ADD_1:
+    case BUILT_IN_ATOMIC_FETCH_SUB_1:
+    case BUILT_IN_ATOMIC_FETCH_AND_1:
+    case BUILT_IN_ATOMIC_FETCH_NAND_1:
+    case BUILT_IN_ATOMIC_FETCH_XOR_1:
+    case BUILT_IN_ATOMIC_FETCH_OR_1:
+      access_size = 1;
+      goto do_atomic;
+
     case BUILT_IN_ATOMIC_LOAD_2:
+      is_store = false;
+      /* FALLTHRU */
+    case BUILT_IN_SYNC_FETCH_AND_ADD_2:
+    case BUILT_IN_SYNC_FETCH_AND_SUB_2:
+    case BUILT_IN_SYNC_FETCH_AND_OR_2:
+    case BUILT_IN_SYNC_FETCH_AND_AND_2:
+    case BUILT_IN_SYNC_FETCH_AND_XOR_2:
+    case BUILT_IN_SYNC_FETCH_AND_NAND_2:
+    case BUILT_IN_SYNC_ADD_AND_FETCH_2:
+    case BUILT_IN_SYNC_SUB_AND_FETCH_2:
+    case BUILT_IN_SYNC_OR_AND_FETCH_2:
+    case BUILT_IN_SYNC_AND_AND_FETCH_2:
+    case BUILT_IN_SYNC_XOR_AND_FETCH_2:
+    case BUILT_IN_SYNC_NAND_AND_FETCH_2:
+    case BUILT_IN_SYNC_BOOL_COMPARE_AND_SWAP_2:
+    case BUILT_IN_SYNC_VAL_COMPARE_AND_SWAP_2:
+    case BUILT_IN_SYNC_LOCK_TEST_AND_SET_2:
+    case BUILT_IN_SYNC_LOCK_RELEASE_2:
+    case BUILT_IN_ATOMIC_EXCHANGE_2:
+    case BUILT_IN_ATOMIC_COMPARE_EXCHANGE_2:
+    case BUILT_IN_ATOMIC_STORE_2:
+    case BUILT_IN_ATOMIC_ADD_FETCH_2:
+    case BUILT_IN_ATOMIC_SUB_FETCH_2:
+    case BUILT_IN_ATOMIC_AND_FETCH_2:
+    case BUILT_IN_ATOMIC_NAND_FETCH_2:
+    case BUILT_IN_ATOMIC_XOR_FETCH_2:
+    case BUILT_IN_ATOMIC_OR_FETCH_2:
+    case BUILT_IN_ATOMIC_FETCH_ADD_2:
+    case BUILT_IN_ATOMIC_FETCH_SUB_2:
+    case BUILT_IN_ATOMIC_FETCH_AND_2:
+    case BUILT_IN_ATOMIC_FETCH_NAND_2:
+    case BUILT_IN_ATOMIC_FETCH_XOR_2:
+    case BUILT_IN_ATOMIC_FETCH_OR_2:
+      access_size = 2;
+      goto do_atomic;
+
     case BUILT_IN_ATOMIC_LOAD_4:
+      is_store = false;
+      /* FALLTHRU */
+    case BUILT_IN_SYNC_FETCH_AND_ADD_4:
+    case BUILT_IN_SYNC_FETCH_AND_SUB_4:
+    case BUILT_IN_SYNC_FETCH_AND_OR_4:
+    case BUILT_IN_SYNC_FETCH_AND_AND_4:
+    case BUILT_IN_SYNC_FETCH_AND_XOR_4:
+    case BUILT_IN_SYNC_FETCH_AND_NAND_4:
+    case BUILT_IN_SYNC_ADD_AND_FETCH_4:
+    case BUILT_IN_SYNC_SUB_AND_FETCH_4:
+    case BUILT_IN_SYNC_OR_AND_FETCH_4:
+    case BUILT_IN_SYNC_AND_AND_FETCH_4:
+    case BUILT_IN_SYNC_XOR_AND_FETCH_4:
+    case BUILT_IN_SYNC_NAND_AND_FETCH_4:
+    case BUILT_IN_SYNC_BOOL_COMPARE_AND_SWAP_4:
+    case BUILT_IN_SYNC_VAL_COMPARE_AND_SWAP_4:
+    case BUILT_IN_SYNC_LOCK_TEST_AND_SET_4:
+    case BUILT_IN_SYNC_LOCK_RELEASE_4:
+    case BUILT_IN_ATOMIC_EXCHANGE_4:
+    case BUILT_IN_ATOMIC_COMPARE_EXCHANGE_4:
+    case BUILT_IN_ATOMIC_STORE_4:
+    case BUILT_IN_ATOMIC_ADD_FETCH_4:
+    case BUILT_IN_ATOMIC_SUB_FETCH_4:
+    case BUILT_IN_ATOMIC_AND_FETCH_4:
+    case BUILT_IN_ATOMIC_NAND_FETCH_4:
+    case BUILT_IN_ATOMIC_XOR_FETCH_4:
+    case BUILT_IN_ATOMIC_OR_FETCH_4:
+    case BUILT_IN_ATOMIC_FETCH_ADD_4:
+    case BUILT_IN_ATOMIC_FETCH_SUB_4:
+    case BUILT_IN_ATOMIC_FETCH_AND_4:
+    case BUILT_IN_ATOMIC_FETCH_NAND_4:
+    case BUILT_IN_ATOMIC_FETCH_XOR_4:
+    case BUILT_IN_ATOMIC_FETCH_OR_4:
+      access_size = 4;
+      goto do_atomic;
+
     case BUILT_IN_ATOMIC_LOAD_8:
+      is_store = false;
+      /* FALLTHRU */
+    case BUILT_IN_SYNC_FETCH_AND_ADD_8:
+    case BUILT_IN_SYNC_FETCH_AND_SUB_8:
+    case BUILT_IN_SYNC_FETCH_AND_OR_8:
+    case BUILT_IN_SYNC_FETCH_AND_AND_8:
+    case BUILT_IN_SYNC_FETCH_AND_XOR_8:
+    case BUILT_IN_SYNC_FETCH_AND_NAND_8:
+    case BUILT_IN_SYNC_ADD_AND_FETCH_8:
+    case BUILT_IN_SYNC_SUB_AND_FETCH_8:
+    case BUILT_IN_SYNC_OR_AND_FETCH_8:
+    case BUILT_IN_SYNC_AND_AND_FETCH_8:
+    case BUILT_IN_SYNC_XOR_AND_FETCH_8:
+    case BUILT_IN_SYNC_NAND_AND_FETCH_8:
+    case BUILT_IN_SYNC_BOOL_COMPARE_AND_SWAP_8:
+    case BUILT_IN_SYNC_VAL_COMPARE_AND_SWAP_8:
+    case BUILT_IN_SYNC_LOCK_TEST_AND_SET_8:
+    case BUILT_IN_SYNC_LOCK_RELEASE_8:
+    case BUILT_IN_ATOMIC_EXCHANGE_8:
+    case BUILT_IN_ATOMIC_COMPARE_EXCHANGE_8:
+    case BUILT_IN_ATOMIC_STORE_8:
+    case BUILT_IN_ATOMIC_ADD_FETCH_8:
+    case BUILT_IN_ATOMIC_SUB_FETCH_8:
+    case BUILT_IN_ATOMIC_AND_FETCH_8:
+    case BUILT_IN_ATOMIC_NAND_FETCH_8:
+    case BUILT_IN_ATOMIC_XOR_FETCH_8:
+    case BUILT_IN_ATOMIC_OR_FETCH_8:
+    case BUILT_IN_ATOMIC_FETCH_ADD_8:
+    case BUILT_IN_ATOMIC_FETCH_SUB_8:
+    case BUILT_IN_ATOMIC_FETCH_AND_8:
+    case BUILT_IN_ATOMIC_FETCH_NAND_8:
+    case BUILT_IN_ATOMIC_FETCH_XOR_8:
+    case BUILT_IN_ATOMIC_FETCH_OR_8:
+      access_size = 8;
+      goto do_atomic;
+
     case BUILT_IN_ATOMIC_LOAD_16:
       is_store = false;
-      /* fall through.  */
-
-    case BUILT_IN_SYNC_FETCH_AND_ADD_1:
-    case BUILT_IN_SYNC_FETCH_AND_ADD_2:
-    case BUILT_IN_SYNC_FETCH_AND_ADD_4:
-    case BUILT_IN_SYNC_FETCH_AND_ADD_8:
+      /* FALLTHRU */
     case BUILT_IN_SYNC_FETCH_AND_ADD_16:
-
-    case BUILT_IN_SYNC_FETCH_AND_SUB_1:
-    case BUILT_IN_SYNC_FETCH_AND_SUB_2:
-    case BUILT_IN_SYNC_FETCH_AND_SUB_4:
-    case BUILT_IN_SYNC_FETCH_AND_SUB_8:
     case BUILT_IN_SYNC_FETCH_AND_SUB_16:
-
-    case BUILT_IN_SYNC_FETCH_AND_OR_1:
-    case BUILT_IN_SYNC_FETCH_AND_OR_2:
-    case BUILT_IN_SYNC_FETCH_AND_OR_4:
-    case BUILT_IN_SYNC_FETCH_AND_OR_8:
     case BUILT_IN_SYNC_FETCH_AND_OR_16:
-
-    case BUILT_IN_SYNC_FETCH_AND_AND_1:
-    case BUILT_IN_SYNC_FETCH_AND_AND_2:
-    case BUILT_IN_SYNC_FETCH_AND_AND_4:
-    case BUILT_IN_SYNC_FETCH_AND_AND_8:
     case BUILT_IN_SYNC_FETCH_AND_AND_16:
-
-    case BUILT_IN_SYNC_FETCH_AND_XOR_1:
-    case BUILT_IN_SYNC_FETCH_AND_XOR_2:
-    case BUILT_IN_SYNC_FETCH_AND_XOR_4:
-    case BUILT_IN_SYNC_FETCH_AND_XOR_8:
     case BUILT_IN_SYNC_FETCH_AND_XOR_16:
-
-    case BUILT_IN_SYNC_FETCH_AND_NAND_1:
-    case BUILT_IN_SYNC_FETCH_AND_NAND_2:
-    case BUILT_IN_SYNC_FETCH_AND_NAND_4:
-    case BUILT_IN_SYNC_FETCH_AND_NAND_8:
-
-    case BUILT_IN_SYNC_ADD_AND_FETCH_1:
-    case BUILT_IN_SYNC_ADD_AND_FETCH_2:
-    case BUILT_IN_SYNC_ADD_AND_FETCH_4:
-    case BUILT_IN_SYNC_ADD_AND_FETCH_8:
+    case BUILT_IN_SYNC_FETCH_AND_NAND_16:
     case BUILT_IN_SYNC_ADD_AND_FETCH_16:
-
-    case BUILT_IN_SYNC_SUB_AND_FETCH_1:
-    case BUILT_IN_SYNC_SUB_AND_FETCH_2:
-    case BUILT_IN_SYNC_SUB_AND_FETCH_4:
-    case BUILT_IN_SYNC_SUB_AND_FETCH_8:
     case BUILT_IN_SYNC_SUB_AND_FETCH_16:
-
-    case BUILT_IN_SYNC_OR_AND_FETCH_1:
-    case BUILT_IN_SYNC_OR_AND_FETCH_2:
-    case BUILT_IN_SYNC_OR_AND_FETCH_4:
-    case BUILT_IN_SYNC_OR_AND_FETCH_8:
     case BUILT_IN_SYNC_OR_AND_FETCH_16:
-
-    case BUILT_IN_SYNC_AND_AND_FETCH_1:
-    case BUILT_IN_SYNC_AND_AND_FETCH_2:
-    case BUILT_IN_SYNC_AND_AND_FETCH_4:
-    case BUILT_IN_SYNC_AND_AND_FETCH_8:
     case BUILT_IN_SYNC_AND_AND_FETCH_16:
-
-    case BUILT_IN_SYNC_XOR_AND_FETCH_1:
-    case BUILT_IN_SYNC_XOR_AND_FETCH_2:
-    case BUILT_IN_SYNC_XOR_AND_FETCH_4:
-    case BUILT_IN_SYNC_XOR_AND_FETCH_8:
     case BUILT_IN_SYNC_XOR_AND_FETCH_16:
-
-    case BUILT_IN_SYNC_NAND_AND_FETCH_1:
-    case BUILT_IN_SYNC_NAND_AND_FETCH_2:
-    case BUILT_IN_SYNC_NAND_AND_FETCH_4:
-    case BUILT_IN_SYNC_NAND_AND_FETCH_8:
-
-    case BUILT_IN_SYNC_BOOL_COMPARE_AND_SWAP_1:
-    case BUILT_IN_SYNC_BOOL_COMPARE_AND_SWAP_2:
-    case BUILT_IN_SYNC_BOOL_COMPARE_AND_SWAP_4:
-    case BUILT_IN_SYNC_BOOL_COMPARE_AND_SWAP_8:
+    case BUILT_IN_SYNC_NAND_AND_FETCH_16:
     case BUILT_IN_SYNC_BOOL_COMPARE_AND_SWAP_16:
-
-    case BUILT_IN_SYNC_VAL_COMPARE_AND_SWAP_1:
-    case BUILT_IN_SYNC_VAL_COMPARE_AND_SWAP_2:
-    case BUILT_IN_SYNC_VAL_COMPARE_AND_SWAP_4:
-    case BUILT_IN_SYNC_VAL_COMPARE_AND_SWAP_8:
     case BUILT_IN_SYNC_VAL_COMPARE_AND_SWAP_16:
-
-    case BUILT_IN_SYNC_LOCK_TEST_AND_SET_1:
-    case BUILT_IN_SYNC_LOCK_TEST_AND_SET_2:
-    case BUILT_IN_SYNC_LOCK_TEST_AND_SET_4:
-    case BUILT_IN_SYNC_LOCK_TEST_AND_SET_8:
     case BUILT_IN_SYNC_LOCK_TEST_AND_SET_16:
-
-    case BUILT_IN_SYNC_LOCK_RELEASE_1:
-    case BUILT_IN_SYNC_LOCK_RELEASE_2:
-    case BUILT_IN_SYNC_LOCK_RELEASE_4:
-    case BUILT_IN_SYNC_LOCK_RELEASE_8:
     case BUILT_IN_SYNC_LOCK_RELEASE_16:
-
-    case BUILT_IN_ATOMIC_EXCHANGE_1:
-    case BUILT_IN_ATOMIC_EXCHANGE_2:
-    case BUILT_IN_ATOMIC_EXCHANGE_4:
-    case BUILT_IN_ATOMIC_EXCHANGE_8:
     case BUILT_IN_ATOMIC_EXCHANGE_16:
-
-    case BUILT_IN_ATOMIC_COMPARE_EXCHANGE_1:
-    case BUILT_IN_ATOMIC_COMPARE_EXCHANGE_2:
-    case BUILT_IN_ATOMIC_COMPARE_EXCHANGE_4:
-    case BUILT_IN_ATOMIC_COMPARE_EXCHANGE_8:
     case BUILT_IN_ATOMIC_COMPARE_EXCHANGE_16:
-
-    case BUILT_IN_ATOMIC_STORE_1:
-    case BUILT_IN_ATOMIC_STORE_2:
-    case BUILT_IN_ATOMIC_STORE_4:
-    case BUILT_IN_ATOMIC_STORE_8:
     case BUILT_IN_ATOMIC_STORE_16:
-
-    case BUILT_IN_ATOMIC_ADD_FETCH_1:
-    case BUILT_IN_ATOMIC_ADD_FETCH_2:
-    case BUILT_IN_ATOMIC_ADD_FETCH_4:
-    case BUILT_IN_ATOMIC_ADD_FETCH_8:
     case BUILT_IN_ATOMIC_ADD_FETCH_16:
-
-    case BUILT_IN_ATOMIC_SUB_FETCH_1:
-    case BUILT_IN_ATOMIC_SUB_FETCH_2:
-    case BUILT_IN_ATOMIC_SUB_FETCH_4:
-    case BUILT_IN_ATOMIC_SUB_FETCH_8:
     case BUILT_IN_ATOMIC_SUB_FETCH_16:
-
-    case BUILT_IN_ATOMIC_AND_FETCH_1:
-    case BUILT_IN_ATOMIC_AND_FETCH_2:
-    case BUILT_IN_ATOMIC_AND_FETCH_4:
-    case BUILT_IN_ATOMIC_AND_FETCH_8:
     case BUILT_IN_ATOMIC_AND_FETCH_16:
-
-    case BUILT_IN_ATOMIC_NAND_FETCH_1:
-    case BUILT_IN_ATOMIC_NAND_FETCH_2:
-    case BUILT_IN_ATOMIC_NAND_FETCH_4:
-    case BUILT_IN_ATOMIC_NAND_FETCH_8:
     case BUILT_IN_ATOMIC_NAND_FETCH_16:
-
-    case BUILT_IN_ATOMIC_XOR_FETCH_1:
-    case BUILT_IN_ATOMIC_XOR_FETCH_2:
-    case BUILT_IN_ATOMIC_XOR_FETCH_4:
-    case BUILT_IN_ATOMIC_XOR_FETCH_8:
     case BUILT_IN_ATOMIC_XOR_FETCH_16:
-
-    case BUILT_IN_ATOMIC_OR_FETCH_1:
-    case BUILT_IN_ATOMIC_OR_FETCH_2:
-    case BUILT_IN_ATOMIC_OR_FETCH_4:
-    case BUILT_IN_ATOMIC_OR_FETCH_8:
     case BUILT_IN_ATOMIC_OR_FETCH_16:
-
-    case BUILT_IN_ATOMIC_FETCH_ADD_1:
-    case BUILT_IN_ATOMIC_FETCH_ADD_2:
-    case BUILT_IN_ATOMIC_FETCH_ADD_4:
-    case BUILT_IN_ATOMIC_FETCH_ADD_8:
     case BUILT_IN_ATOMIC_FETCH_ADD_16:
-
-    case BUILT_IN_ATOMIC_FETCH_SUB_1:
-    case BUILT_IN_ATOMIC_FETCH_SUB_2:
-    case BUILT_IN_ATOMIC_FETCH_SUB_4:
-    case BUILT_IN_ATOMIC_FETCH_SUB_8:
     case BUILT_IN_ATOMIC_FETCH_SUB_16:
-
-    case BUILT_IN_ATOMIC_FETCH_AND_1:
-    case BUILT_IN_ATOMIC_FETCH_AND_2:
-    case BUILT_IN_ATOMIC_FETCH_AND_4:
-    case BUILT_IN_ATOMIC_FETCH_AND_8:
     case BUILT_IN_ATOMIC_FETCH_AND_16:
-
-    case BUILT_IN_ATOMIC_FETCH_NAND_1:
-    case BUILT_IN_ATOMIC_FETCH_NAND_2:
-    case BUILT_IN_ATOMIC_FETCH_NAND_4:
-    case BUILT_IN_ATOMIC_FETCH_NAND_8:
     case BUILT_IN_ATOMIC_FETCH_NAND_16:
-
-    case BUILT_IN_ATOMIC_FETCH_XOR_1:
-    case BUILT_IN_ATOMIC_FETCH_XOR_2:
-    case BUILT_IN_ATOMIC_FETCH_XOR_4:
-    case BUILT_IN_ATOMIC_FETCH_XOR_8:
     case BUILT_IN_ATOMIC_FETCH_XOR_16:
-
-    case BUILT_IN_ATOMIC_FETCH_OR_1:
-    case BUILT_IN_ATOMIC_FETCH_OR_2:
-    case BUILT_IN_ATOMIC_FETCH_OR_4:
-    case BUILT_IN_ATOMIC_FETCH_OR_8:
     case BUILT_IN_ATOMIC_FETCH_OR_16:
+      access_size = 16;
+      /* FALLTHRU */
+    do_atomic:
       {
 	dest = gimple_call_arg (call, 0);
 	/* DEST represents the address of a memory location.
 	   instrument_derefs wants the memory location, so lets
 	   dereference the address DEST before handing it to
 	   instrument_derefs.  */
-	if (TREE_CODE (dest) == ADDR_EXPR)
-	  dest = TREE_OPERAND (dest, 0);
-	else if (TREE_CODE (dest) == SSA_NAME || TREE_CODE (dest) == INTEGER_CST)
-	  dest = build2 (MEM_REF, TREE_TYPE (TREE_TYPE (dest)),
-			 dest, build_int_cst (TREE_TYPE (dest), 0));
-	else
-	  gcc_unreachable ();
-
-	access_size = int_size_in_bytes (TREE_TYPE (dest));
+	tree type = build_nonstandard_integer_type (access_size
+						    * BITS_PER_UNIT, 1);
+	dest = build2 (MEM_REF, type, dest,
+		       build_int_cst (build_pointer_type (char_type_node), 0));
+	break;
       }
 
     default:
@@ -873,7 +844,7 @@ get_mem_refs_of_builtin_call (const gcall *call,
    contains.  */
 
 static bool
-has_stmt_been_instrumented_p (gimple stmt)
+has_stmt_been_instrumented_p (gimple *stmt)
 {
   if (gimple_assign_single_p (stmt))
     {
@@ -916,6 +887,16 @@ has_stmt_been_instrumented_p (gimple stmt)
 	  return true;
 	}
     }
+  else if (is_gimple_call (stmt) && gimple_store_p (stmt))
+    {
+      asan_mem_ref r;
+      asan_mem_ref_init (&r, NULL, 1);
+
+      r.start = gimple_call_lhs (stmt);
+      r.access_size = int_size_in_bytes (TREE_TYPE (r.start));
+      return has_mem_ref_been_instrumented (&r);
+    }
+
   return false;
 }
 
@@ -1143,12 +1124,16 @@ asan_emit_stack_protection (rtx base, rtx pbase, unsigned int alignb,
       snprintf (buf, sizeof buf, "__asan_stack_malloc_%d",
 		use_after_return_class);
       ret = init_one_libfunc (buf);
-      rtx addr = convert_memory_address (ptr_mode, base);
-      ret = emit_library_call_value (ret, NULL_RTX, LCT_NORMAL, ptr_mode, 2,
+      ret = emit_library_call_value (ret, NULL_RTX, LCT_NORMAL, ptr_mode, 1,
 				     GEN_INT (asan_frame_size
 					      + base_align_bias),
-				     TYPE_MODE (pointer_sized_int_node),
-				     addr, ptr_mode);
+				     TYPE_MODE (pointer_sized_int_node));
+      /* __asan_stack_malloc_[n] returns a pointer to fake stack if succeeded
+	 and NULL otherwise.  Check RET value is NULL here and jump over the
+	 BASE reassignment in this case.  Otherwise, reassign BASE to RET.  */
+      int very_unlikely = REG_BR_PROB_BASE / 2000 - 1;
+      emit_cmp_and_jump_insns (ret, const0_rtx, EQ, NULL_RTX,
+			       VOIDmode, 0, lab, very_unlikely);
       ret = convert_memory_address (Pmode, ret);
       emit_move_insn (base, ret);
       emit_label (lab);
@@ -1374,7 +1359,8 @@ asan_protect_global (tree decl)
 	 to be an array of such vars, putting padding in there
 	 breaks this assumption.  */
       || (DECL_SECTION_NAME (decl) != NULL
-	  && !symtab_node::get (decl)->implicit_section)
+	  && !symtab_node::get (decl)->implicit_section
+	  && !section_sanitized_p (DECL_SECTION_NAME (decl)))
       || DECL_SIZE (decl) == 0
       || ASAN_RED_ZONE_SIZE * BITS_PER_UNIT > MAX_OFILE_ALIGNMENT
       || !valid_constant_size_p (DECL_SIZE_UNIT (decl))
@@ -1601,7 +1587,7 @@ build_shadow_mem_access (gimple_stmt_iterator *gsi, location_t location,
 {
   tree t, uintptr_type = TREE_TYPE (base_addr);
   tree shadow_type = TREE_TYPE (shadow_ptr_type);
-  gimple g;
+  gimple *g;
 
   t = build_int_cst (uintptr_type, ASAN_SHADOW_SHIFT);
   g = gimple_build_assign (make_ssa_name (uintptr_type), RSHIFT_EXPR,
@@ -1637,7 +1623,7 @@ maybe_create_ssa_name (location_t loc, tree base, gimple_stmt_iterator *iter,
 {
   if (TREE_CODE (base) == SSA_NAME)
     return base;
-  gimple g = gimple_build_assign (make_ssa_name (TREE_TYPE (base)),
+  gimple *g = gimple_build_assign (make_ssa_name (TREE_TYPE (base)),
 				  TREE_CODE (base), base);
   gimple_set_location (g, loc);
   if (before_p)
@@ -1656,7 +1642,7 @@ maybe_cast_to_ptrmode (location_t loc, tree len, gimple_stmt_iterator *iter,
 {
   if (ptrofftype_p (len))
     return len;
-  gimple g = gimple_build_assign (make_ssa_name (pointer_sized_int_node),
+  gimple *g = gimple_build_assign (make_ssa_name (pointer_sized_int_node),
 				  NOP_EXPR, len);
   gimple_set_location (g, loc);
   if (before_p)
@@ -1692,7 +1678,7 @@ build_check_stmt (location_t loc, tree base, tree len,
 		  bool is_scalar_access, unsigned int align = 0)
 {
   gimple_stmt_iterator gsi = *iter;
-  gimple g;
+  gimple *g;
 
   gcc_assert (!(size_in_bytes > 0 && !is_non_zero_len));
 
@@ -1770,6 +1756,8 @@ instrument_derefs (gimple_stmt_iterator *iter, tree t,
 
   tree type, base;
   HOST_WIDE_INT size_in_bytes;
+  if (location == UNKNOWN_LOCATION)
+    location = EXPR_LOCATION (t);
 
   type = TREE_TYPE (t);
   switch (TREE_CODE (t))
@@ -1793,9 +1781,9 @@ instrument_derefs (gimple_stmt_iterator *iter, tree t,
   HOST_WIDE_INT bitsize, bitpos;
   tree offset;
   machine_mode mode;
-  int volatilep = 0, unsignedp = 0;
-  tree inner = get_inner_reference (t, &bitsize, &bitpos, &offset,
-				    &mode, &unsignedp, &volatilep, false);
+  int unsignedp, reversep, volatilep = 0;
+  tree inner = get_inner_reference (t, &bitsize, &bitpos, &offset, &mode,
+				    &unsignedp, &reversep, &volatilep, false);
 
   if (TREE_CODE (t) == COMPONENT_REF
       && DECL_BIT_FIELD_REPRESENTATIVE (TREE_OPERAND (t, 1)) != NULL_TREE)
@@ -1803,7 +1791,8 @@ instrument_derefs (gimple_stmt_iterator *iter, tree t,
       tree repr = DECL_BIT_FIELD_REPRESENTATIVE (TREE_OPERAND (t, 1));
       instrument_derefs (iter, build3 (COMPONENT_REF, TREE_TYPE (repr),
 				       TREE_OPERAND (t, 0), repr,
-				       NULL_TREE), location, is_store);
+				       TREE_OPERAND (t, 2)),
+			 location, is_store);
       return;
     }
 
@@ -1982,7 +1971,7 @@ instrument_builtin_call (gimple_stmt_iterator *iter)
 static bool
 maybe_instrument_assignment (gimple_stmt_iterator *iter)
 {
-  gimple s = gsi_stmt (*iter);
+  gimple *s = gsi_stmt (*iter);
 
   gcc_assert (gimple_assign_single_p (s));
 
@@ -1998,7 +1987,7 @@ maybe_instrument_assignment (gimple_stmt_iterator *iter)
 			 is_store);
       is_instrumented = true;
     }
- 
+
   if (gimple_assign_load_p (s))
     {
       ref_expr = gimple_assign_rhs1 (s);
@@ -2026,7 +2015,7 @@ maybe_instrument_assignment (gimple_stmt_iterator *iter)
 static bool
 maybe_instrument_call (gimple_stmt_iterator *iter)
 {
-  gimple stmt = gsi_stmt (*iter);
+  gimple *stmt = gsi_stmt (*iter);
   bool is_builtin = gimple_call_builtin_p (stmt, BUILT_IN_NORMAL);
 
   if (is_builtin && instrument_builtin_call (iter))
@@ -2048,11 +2037,43 @@ maybe_instrument_call (gimple_stmt_iterator *iter)
 	    }
 	}
       tree decl = builtin_decl_implicit (BUILT_IN_ASAN_HANDLE_NO_RETURN);
-      gimple g = gimple_build_call (decl, 0);
+      gimple *g = gimple_build_call (decl, 0);
       gimple_set_location (g, gimple_location (stmt));
       gsi_insert_before (iter, g, GSI_SAME_STMT);
     }
-  return false;
+
+  bool instrumented = false;
+  if (gimple_store_p (stmt))
+    {
+      tree ref_expr = gimple_call_lhs (stmt);
+      instrument_derefs (iter, ref_expr,
+			 gimple_location (stmt),
+			 /*is_store=*/true);
+
+      instrumented = true;
+    }
+
+  /* Walk through gimple_call arguments and check them id needed.  */
+  unsigned args_num = gimple_call_num_args (stmt);
+  for (unsigned i = 0; i < args_num; ++i)
+    {
+      tree arg = gimple_call_arg (stmt, i);
+      /* If ARG is not a non-aggregate register variable, compiler in general
+	 creates temporary for it and pass it as argument to gimple call.
+	 But in some cases, e.g. when we pass by value a small structure that
+	 fits to register, compiler can avoid extra overhead by pulling out
+	 these temporaries.  In this case, we should check the argument.  */
+      if (!is_gimple_reg (arg) && !is_gimple_min_invariant (arg))
+	{
+	  instrument_derefs (iter, arg,
+			     gimple_location (stmt),
+			     /*is_store=*/false);
+	  instrumented = true;
+	}
+    }
+  if (instrumented)
+    gsi_next (iter);
+  return instrumented;
 }
 
 /* Walk each instruction of all basic block and instrument those that
@@ -2090,7 +2111,7 @@ transform_statements (void)
 
       for (i = gsi_start_bb (bb); !gsi_end_p (i);)
 	{
-	  gimple s = gsi_stmt (i);
+	  gimple *s = gsi_stmt (i);
 
 	  if (has_stmt_been_instrumented_p (s))
 	    gsi_next (&i);
@@ -2129,6 +2150,9 @@ transform_statements (void)
 tree
 asan_dynamic_init_call (bool after_p)
 {
+  if (shadow_ptr_types[0] == NULL_TREE)
+    asan_init_shadow_ptr_types ();
+
   tree fn = builtin_decl_implicit (after_p
 				   ? BUILT_IN_ASAN_AFTER_DYNAMIC_INIT
 				   : BUILT_IN_ASAN_BEFORE_DYNAMIC_INIT);
@@ -2138,8 +2162,6 @@ asan_dynamic_init_call (bool after_p)
       pretty_printer module_name_pp;
       pp_string (&module_name_pp, main_input_filename);
 
-      if (shadow_ptr_types[0] == NULL_TREE)
-	asan_init_shadow_ptr_types ();
       module_name_cst = asan_pp_string (&module_name_pp);
       module_name_cst = fold_convert (const_ptr_type_node,
 				      module_name_cst);
@@ -2244,7 +2266,11 @@ asan_add_global (tree decl, tree type, vec<constructor_elt, va_gc> *v)
   CONSTRUCTOR_APPEND_ELT (vinner, NULL_TREE,
 			  fold_convert (const_ptr_type_node, module_name_cst));
   varpool_node *vnode = varpool_node::get (decl);
-  int has_dynamic_init = vnode ? vnode->dynamically_initialized : 0;
+  int has_dynamic_init = 0;
+  /* FIXME: Enable initialization order fiasco detection in LTO mode once
+     proper fix for PR 79061 will be applied.  */
+  if (!in_lto_p)
+    has_dynamic_init = vnode ? vnode->dynamically_initialized : 0;
   CONSTRUCTOR_APPEND_ELT (vinner, NULL_TREE,
 			  build_int_cst (uptr, has_dynamic_init));
   tree locptr = NULL_TREE;
@@ -2384,6 +2410,8 @@ initialize_sanitizer_builtins (void)
   /* ECF_COLD missing */ ATTR_CONST_NORETURN_NOTHROW_LEAF_LIST
 #undef ATTR_PURE_NOTHROW_LEAF_LIST
 #define ATTR_PURE_NOTHROW_LEAF_LIST ECF_PURE | ATTR_NOTHROW_LEAF_LIST
+#undef DEF_BUILTIN_STUB
+#define DEF_BUILTIN_STUB(ENUM, NAME)
 #undef DEF_SANITIZER_BUILTIN
 #define DEF_SANITIZER_BUILTIN(ENUM, NAME, TYPE, ATTRS) \
   decl = add_builtin_function ("__builtin_" NAME, TYPE, ENUM,		\
@@ -2403,6 +2431,7 @@ initialize_sanitizer_builtins (void)
 			   ATTR_PURE_NOTHROW_LEAF_LIST)
 
 #undef DEF_SANITIZER_BUILTIN
+#undef DEF_BUILTIN_STUB
 }
 
 /* Called via htab_traverse.  Count number of emitted
@@ -2480,6 +2509,8 @@ asan_finish_file (void)
     {
       tree fn = builtin_decl_implicit (BUILT_IN_ASAN_INIT);
       append_to_statement_list (build_call_expr (fn, 0), &asan_ctor_statements);
+      fn = builtin_decl_implicit (BUILT_IN_ASAN_VERSION_MISMATCH_CHECK);
+      append_to_statement_list (build_call_expr (fn, 0), &asan_ctor_statements);
     }
   FOR_EACH_DEFINED_VARIABLE (vnode)
     if (TREE_ASM_WRITTEN (vnode->decl)
@@ -2543,11 +2574,13 @@ asan_finish_file (void)
 bool
 asan_expand_check_ifn (gimple_stmt_iterator *iter, bool use_calls)
 {
-  gimple g = gsi_stmt (*iter);
+  gimple *g = gsi_stmt (*iter);
   location_t loc = gimple_location (g);
-
-  bool recover_p
-    = (flag_sanitize & flag_sanitize_recover & SANITIZE_KERNEL_ADDRESS) != 0;
+  bool recover_p;
+  if (flag_sanitize & SANITIZE_USER_ADDRESS)
+    recover_p = (flag_sanitize_recover & SANITIZE_USER_ADDRESS) != 0;
+  else
+    recover_p = (flag_sanitize_recover & SANITIZE_KERNEL_ADDRESS) != 0;
 
   HOST_WIDE_INT flags = tree_to_shwi (gimple_call_arg (g, 0));
   gcc_assert (flags < ASAN_CHECK_LAST);
@@ -2565,7 +2598,7 @@ asan_expand_check_ifn (gimple_stmt_iterator *iter, bool use_calls)
   if (use_calls)
     {
       /* Instrument using callbacks.  */
-      gimple g = gimple_build_assign (make_ssa_name (pointer_sized_int_node),
+      gimple *g = gimple_build_assign (make_ssa_name (pointer_sized_int_node),
 				      NOP_EXPR, base);
       gimple_set_location (g, loc);
       gsi_insert_before (iter, g, GSI_SAME_STMT);
@@ -2656,7 +2689,7 @@ asan_expand_check_ifn (gimple_stmt_iterator *iter, bool use_calls)
 	 & ((base_addr & 7) + (real_size_in_bytes - 1)) >= shadow).  */
       tree shadow = build_shadow_mem_access (&gsi, loc, base_addr,
 					     shadow_ptr_type);
-      gimple shadow_test = build_assign (NE_EXPR, shadow, 0);
+      gimple *shadow_test = build_assign (NE_EXPR, shadow, 0);
       gimple_seq seq = NULL;
       gimple_seq_add_stmt (&seq, shadow_test);
       /* Aligned (>= 8 bytes) can test just
@@ -2703,7 +2736,7 @@ asan_expand_check_ifn (gimple_stmt_iterator *iter, bool use_calls)
 
 	  tree shadow = build_shadow_mem_access (&gsi, loc, base_end_addr,
 						 shadow_ptr_type);
-	  gimple shadow_test = build_assign (NE_EXPR, shadow, 0);
+	  gimple *shadow_test = build_assign (NE_EXPR, shadow, 0);
 	  gimple_seq seq = NULL;
 	  gimple_seq_add_stmt (&seq, shadow_test);
 	  gimple_seq_add_stmt (&seq, build_assign (BIT_AND_EXPR,

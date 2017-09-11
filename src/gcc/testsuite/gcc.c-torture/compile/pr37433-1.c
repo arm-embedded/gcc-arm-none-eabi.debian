@@ -1,12 +1,10 @@
-void
-regex_subst (void)
+void regex_subst(void)
 {
   const void *subst = "";
   (*(void (*)(int))subst) (0);
 }
 
-void
-foobar (void)
+void foobar (void)
 {
   int x;
   (*(void (*)(void))&x) ();

@@ -29,66 +29,85 @@
 __gnu_cmse_nonsecure_call:
 #if defined(__ARM_ARCH_8M_MAIN__)
 push	    {r5-r11,lr}
-mov	    r5, r4
-mov	    r6, r4
 mov	    r7, r4
 mov	    r8, r4
 mov	    r9, r4
 mov	    r10, r4
 mov	    r11, r4
 mov	    ip, r4
-#if !defined(__SOFTFP__)
+
+/* Save and clear callee-saved registers only if we are dealing with hard float
+   ABI.  The unused caller-saved registers have already been cleared by GCC
+   generated code.  */
+#ifdef __ARM_PCS_VFP
 vpush.f64   {d8-d15}
+mov	    r5, #0
+vmov	    d8, r5, r5
 #if __ARM_FP & 0x04
-vmov.f32    s16, #1.00000
-vmov.f32    s17, #1.00000
-vmov.f32    s18, #1.00000
-vmov.f32    s19, #1.00000
-vmov.f32    s20, #1.00000
-vmov.f32    s21, #1.00000
-vmov.f32    s22, #1.00000
-vmov.f32    s23, #1.00000
-vmov.f32    s24, #1.00000
-vmov.f32    s25, #1.00000
-vmov.f32    s26, #1.00000
-vmov.f32    s27, #1.00000
-vmov.f32    s28, #1.00000
-vmov.f32    s29, #1.00000
-vmov.f32    s30, #1.00000
-vmov.f32    s31, #1.00000
+vmov	    s18, s19, r5, r5
+vmov	    s20, s21, r5, r5
+vmov	    s22, s23, r5, r5
+vmov	    s24, s25, r5, r5
+vmov	    s26, s27, r5, r5
+vmov	    s28, s29, r5, r5
+vmov	    s30, s31, r5, r5
 #elif __ARM_FP & 0x08
-vmov.f64    d8, #1.00000
-vmov.f64    d9, #1.00000
-vmov.f64    d10, #1.00000
-vmov.f64    d11, #1.00000
-vmov.f64    d12, #1.00000
-vmov.f64    d13, #1.00000
-vmov.f64    d14, #1.00000
-vmov.f64    d15, #1.00000
+vmov.f64    d9, d8
+vmov.f64    d10, d8
+vmov.f64    d11, d8
+vmov.f64    d12, d8
+vmov.f64    d13, d8
+vmov.f64    d14, d8
+vmov.f64    d15, d8
 #else
 #error "Half precision implementation not supported."
 #endif
-vmsr	    fpscr, r4
-#endif
-#if defined(__ARM_FEATURE_DSP)
+/* Clear the cumulative exception-status bits (0-4,7) and the
+   condition code bits (28-31) of the FPSCR.  */
+vmrs	    r5, fpscr
+movw	    r6, #65376
+movt	    r6, #4095
+ands	    r5, r6
+vmsr	    fpscr, r5
+
+/* We are not dealing with hard float ABI, so we can safely use the vlstm and
+   vlldm instructions without needing to preserve the registers used for
+   argument passing.  */
+#else
+sub	    sp, sp, #0x88 /* Reserve stack space to save all floating point
+			     registers, including FPSCR.  */
+vlstm	    sp		  /* Lazy store and clearance of d0-d16 and FPSCR.  */
+#endif /* __ARM_PCS_VFP */
+
+/* Make sure to clear the 'GE' bits of the APSR register if 32-bit SIMD
+   instructions are available.  */
+#if defined(__ARM_FEATURE_SIMD32)
 msr	    APSR_nzcvqg, r4
 #else
 msr	    APSR_nzcvq, r4
 #endif
+
+mov	    r5, r4
+mov	    r6, r4
 blxns	    r4
-#if !defined(__SOFTFP__)
+
+#ifdef __ARM_PCS_VFP
 vpop.f64    {d8-d15}
-#endif
-pop	    {r5-r11}
+#else
+vlldm	    sp		  /* Lazy restore of d0-d16 and FPSCR.  */
+add	    sp, sp, #0x88 /* Free space used to save floating point registers.  */
+#endif /* __ARM_PCS_VFP */
+
+pop	    {r5-r11, pc}
+
 #elif defined (__ARM_ARCH_8M_BASE__)
-push	    {r5-r7}
+push	    {r5-r7, lr}
 mov	    r5, r8
 mov	    r6, r9
 mov	    r7, r10
 push	    {r5-r7}
 mov	    r5, r11
-mov	    r6, lr
-push	    {r5,r6}
+push	    {r5}
 mov	    r5, r4
 mov	    r6, r4
 mov	    r7, r4
@@ -99,15 +118,14 @@ mov	    r11, r4
 mov	    ip, r4
 msr	    APSR_nzcvq, r4
 blxns	    r4
-pop	    {r5, r6}
-mov	    lr, r6
+pop	    {r5}
 mov	    r11, r5
 pop	    {r5-r7}
 mov	    r10, r7
 mov	    r9, r6
 mov	    r8, r5
-pop	    {r5-r7}
-blx	    lr
+pop	    {r5-r7, pc}
+
 #else
 #error "This should only be used for armv8-m base- and mainline."
 #endif

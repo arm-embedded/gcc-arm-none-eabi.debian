@@ -25,8 +25,6 @@
 #if __ARM_FEATURE_CMSE & 1
 
 #include <arm_cmse.h>
-#include <stdint.h>
-
 
 /* ARM intrinsic function to perform a permission check on a given
    address range.  See ACLE changes for ARMv8-M.  */

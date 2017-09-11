@@ -20,3 +20,5 @@ foo (void)
 /* { dg-final { scan-assembler-not "vmsr" } } */
 /* { dg-final { scan-assembler "msr\tAPSR_nzcvq, lr" { target { arm_arch_v8m_main_ok && { ! arm_dsp } } } } } */
 /* { dg-final { scan-assembler "msr\tAPSR_nzcvqg, lr" { target { arm_arch_v8m_main_ok && arm_dsp } } } } */
+/* { dg-final { scan-assembler "bxns" } } */
+

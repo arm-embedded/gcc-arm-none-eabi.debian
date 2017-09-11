@@ -1,5 +1,5 @@
 ;; Machine description for ARM processor synchronization primitives.
-;; Copyright (C) 2010-2015 Free Software Foundation, Inc.
+;; Copyright (C) 2010-2016 Free Software Foundation, Inc.
 ;; Written by Marcus Shawcroft (marcus.shawcroft@arm.com)
 ;; 64bit Atomics by Dave Gilbert (david.gilbert@linaro.org)
 ;;
@@ -50,14 +50,11 @@
   {
     if (TARGET_HAVE_DMB)
       {
-	/* Note we issue a system level barrier. We should consider issuing
-	   a inner shareabilty zone barrier here instead, ie. "DMB ISH".  */
-	/* ??? Differentiate based on SEQ_CST vs less strict?  */
-	return "dmb\tsy";
+	return "dmb\\tish";
       }
 
     if (TARGET_HAVE_DMB_MCR)
-      return "mcr\tp15, 0, r0, c7, c10, 5";
+      return "mcr\\tp15, 0, r0, c7, c10, 5";
 
     gcc_unreachable ();
   }
@@ -75,7 +72,12 @@
   {
     enum memmodel model = memmodel_from_int (INTVAL (operands[2]));
     if (is_mm_relaxed (model) || is_mm_consume (model) || is_mm_release (model))
-      return \"ldr%(<sync_sfx>%)\\t%0, %1\";
+      {
+	if (TARGET_THUMB1)
+	  return \"ldr<sync_sfx>\\t%0, %1\";
+	else
+	  return \"ldr<sync_sfx>%?\\t%0, %1\";
+      }
     else
       {
 	if (TARGET_THUMB1)
@@ -98,7 +100,12 @@
   {
     enum memmodel model = memmodel_from_int (INTVAL (operands[2]));
     if (is_mm_relaxed (model) || is_mm_consume (model) || is_mm_acquire (model))
-      return \"str%(<sync_sfx>%)\t%1, %0\";
+      {
+	if (TARGET_THUMB1)
+	  return \"str<sync_sfx>\t%1, %0\";
+	else
+	  return \"str<sync_sfx>%?\t%1, %0\";
+      }
     else
       {
 	if (TARGET_THUMB1)
@@ -119,7 +126,7 @@
 	  [(match_operand:DI 1 "arm_sync_memory_operand" "Q")]
 	    VUNSPEC_LDRD_ATOMIC))]
   "ARM_DOUBLEWORD_ALIGN && TARGET_HAVE_LPAE"
-  "ldr%(d%)\t%0, %H0, %C1"
+  "ldrd%?\t%0, %H0, %C1"
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")])
 
@@ -132,7 +139,7 @@
   [(match_operand:DI 0 "s_register_operand")		;; val out
    (match_operand:DI 1 "mem_noofs_operand")		;; memory
    (match_operand:SI 2 "const_int_operand")]		;; model
-  "(TARGET_HAVE_LDREXD || TARGET_HAVE_LPAE || TARGET_HAVE_LDACQ)
+  "(TARGET_HAVE_LDREXD || TARGET_HAVE_LPAE || TARGET_HAVE_LDACQEXD)
    && ARM_DOUBLEWORD_ALIGN"
 {
   memmodel model = memmodel_from_int (INTVAL (operands[2]));
@@ -140,7 +147,7 @@
   /* For ARMv8-A we can use an LDAEXD to atomically load two 32-bit registers
      when acquire or stronger semantics are needed.  When the relaxed model is
      used this can be relaxed to a normal LDRD.  */
-  if (TARGET_HAVE_LDACQ)
+  if (TARGET_HAVE_LDACQEXD)
     {
       if (is_mm_relaxed (model))
 	emit_insn (gen_arm_atomic_loaddi2_ldrd (operands[0], operands[1]));
@@ -184,9 +191,9 @@
 
 ;; Constraints of this pattern must be at least as strict as those of the
 ;; cbranchsi operations in thumb1.md and aim to be as permissive.
-(define_insn_and_split "atomic_compare_and_swap<mode>_1"
-  [(set (match_operand 0 "cc_register_operand" "=&c,&l,&l,&l")		;; bool out
-	(unspec_volatile:CC_Z [(const_int 0)] VUNSPEC_ATOMIC_CAS))
+(define_insn_and_split "atomic_compare_and_swap<CCSI:arch><NARROW:mode>_1"
+  [(set (match_operand:CCSI 0 "cc_register_operand" "=&c,&l,&l,&l")	;; bool out
+	(unspec_volatile:CCSI [(const_int 0)] VUNSPEC_ATOMIC_CAS))
    (set (match_operand:SI 1 "s_register_operand" "=&r,&l,&0,&l*h")	;; val out
 	(zero_extend:SI
 	  (match_operand:NARROW 2 "mem_noofs_operand" "+Ua,Ua,Ua,Ua")))	;; memory
@@ -216,9 +223,9 @@
 
 ;; Constraints of this pattern must be at least as strict as those of the
 ;; cbranchsi operations in thumb1.md and aim to be as permissive.
-(define_insn_and_split "atomic_compare_and_swap<mode>_1"
-  [(set (match_operand 0 "cc_register_operand" "=&c,&l,&l,&l")		;; bool out
-	(unspec_volatile:CC_Z [(const_int 0)] VUNSPEC_ATOMIC_CAS))
+(define_insn_and_split "atomic_compare_and_swap<CCSI:arch><SIDI:mode>_1"
+  [(set (match_operand:CCSI 0 "cc_register_operand" "=&c,&l,&l,&l")	;; bool out
+	(unspec_volatile:CCSI [(const_int 0)] VUNSPEC_ATOMIC_CAS))
    (set (match_operand:SIDI 1 "s_register_operand" "=&r,&l,&0,&l*h")	;; val out
 	(match_operand:SIDI 2 "mem_noofs_operand" "+Ua,Ua,Ua,Ua"))	;; memory
    (set (match_dup 2)
@@ -512,7 +519,7 @@
 	(unspec_volatile:DI
 	  [(match_operand:DI 1 "mem_noofs_operand" "Ua")]
 	  VUNSPEC_LAX))]
-  "TARGET_HAVE_LDACQ && ARM_DOUBLEWORD_ALIGN"
+  "TARGET_HAVE_LDACQEXD && ARM_DOUBLEWORD_ALIGN"
   "ldaexd%?\t%0, %H0, %C1"
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")])
@@ -552,7 +559,7 @@
 	(unspec_volatile:DI
 	  [(match_operand:DI 2 "s_register_operand" "r")]
 	  VUNSPEC_SLX))]
-  "TARGET_HAVE_LDACQ && ARM_DOUBLEWORD_ALIGN"
+  "TARGET_HAVE_LDACQEXD && ARM_DOUBLEWORD_ALIGN"
   {
     rtx value = operands[2];
     /* See comment in arm_store_exclusive<mode> above.  */
