@@ -1,3 +1,12 @@
+gcc-arm-none-eabi (15:6.3.1+svn251940-1) UNRELEASED; urgency=medium
+
+  * Updated version 6.3.1+svn251940 from 'upstream/6.3.1+svn251940'
+  * Update gfdl and big-endian-support patches
+  * Remove armv8 support see https://bugs.launchpad.net/gcc-arm-embedded/+bug/1717502
+  * Add missing b-dependency on `rename`
+
+ -- Agustin Henze <tin@debian.org>  Mon, 11 Sep 2017 08:55:44 -0300
+
 gcc-arm-none-eabi (15:5.4.1+svn241155-1) unstable; urgency=medium
 
   * Imported Upstream version 5.4.1+svn241155 (Closes: #831142)
