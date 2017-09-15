@@ -1,0 +1,74 @@
+--- a/src/gcc/config/arm/t-rmprofile
++++ b/src/gcc/config/arm/t-rmprofile
+@@ -43,8 +43,8 @@
+ MULTILIB_OPTIONS       += mthumb
+ MULTILIB_DIRNAMES      += thumb
+ 
+-MULTILIB_OPTIONS       += march=armv6s-m/march=armv7-m/march=armv7e-m/march=armv7/march=armv8-m.base/march=armv8-m.main
+-MULTILIB_DIRNAMES      += v6-m v7-m v7e-m v7-ar v8-m.base v8-m.main
++MULTILIB_OPTIONS       += march=armv6s-m/march=armv7-m/march=armv7e-m/march=armv7
++MULTILIB_DIRNAMES      += v6-m v7-m v7e-m v7-ar
+ 
+ MULTILIB_OPTIONS       += mfpu=vfpv3-d16/mfpu=fpv4-sp-d16/mfpu=fpv5-sp-d16/mfpu=fpv5-d16
+ MULTILIB_DIRNAMES      += fpv3 fpv4-sp fpv5-sp fpv5
+@@ -64,9 +64,6 @@
+ # ARMv6-M
+ MULTILIB_REQUIRED      += mthumb/march=armv6s-m
+ 
+-# ARMv8-M Baseline
+-MULTILIB_REQUIRED      += mthumb/march=armv8-m.base
+-
+ # ARMv7-M
+ MULTILIB_REQUIRED      += mthumb/march=armv7-m
+ 
+@@ -77,13 +74,6 @@
+ MULTILIB_REQUIRED      += mthumb/march=armv7e-m/mfpu=fpv5-d16/mfloat-abi=softfp
+ MULTILIB_REQUIRED      += mthumb/march=armv7e-m/mfpu=fpv5-d16/mfloat-abi=hard
+ 
+-# ARMv8-M Mainline
+-MULTILIB_REQUIRED      += mthumb/march=armv8-m.main
+-MULTILIB_REQUIRED      += mthumb/march=armv8-m.main/mfpu=fpv5-d16/mfloat-abi=softfp
+-MULTILIB_REQUIRED      += mthumb/march=armv8-m.main/mfpu=fpv5-d16/mfloat-abi=hard
+-MULTILIB_REQUIRED      += mthumb/march=armv8-m.main/mfpu=fpv5-sp-d16/mfloat-abi=softfp
+-MULTILIB_REQUIRED      += mthumb/march=armv8-m.main/mfpu=fpv5-sp-d16/mfloat-abi=hard
+-
+ # ARMv7-R as well as ARMv7-A and ARMv8-A if aprofile was not specified
+ MULTILIB_REQUIRED      += mthumb/march=armv7
+ MULTILIB_REQUIRED      += mthumb/march=armv7/mfpu=vfpv3-d16/mfloat-abi=softfp
+@@ -106,8 +96,6 @@
+ MULTILIB_MATCHES       += march?armv7-m=mcpu?cortex-m3
+ MULTILIB_MATCHES       += march?armv7e-m=mcpu?cortex-m4
+ MULTILIB_MATCHES       += march?armv7e-m=mcpu?cortex-m7
+-MULTILIB_MATCHES       += march?armv8-m.base=mcpu?cortex-m23
+-MULTILIB_MATCHES       += march?armv8-m.main=mcpu?cortex-m33
+ MULTILIB_MATCHES       += march?armv7=mcpu?cortex-r4
+ MULTILIB_MATCHES       += march?armv7=mcpu?cortex-r4f
+ MULTILIB_MATCHES       += march?armv7=mcpu?cortex-r5
+@@ -140,17 +128,10 @@
+ 
+ # Arch Matches
+ MULTILIB_MATCHES       += march?armv6s-m=march?armv6-m
+-MULTILIB_MATCHES       += march?armv8-m.main=march?armv8-m.main+dsp
+ MULTILIB_MATCHES       += march?armv7=march?armv7-r
+ ifeq (,$(HAS_APROFILE))
+ MULTILIB_MATCHES       += march?armv7=march?armv7-a
+ MULTILIB_MATCHES       += march?armv7=march?armv7ve
+-MULTILIB_MATCHES       += march?armv7=march?armv8-a
+-MULTILIB_MATCHES       += march?armv7=march?armv8-a+crc
+-MULTILIB_MATCHES       += march?armv7=march?armv8.1-a
+-MULTILIB_MATCHES       += march?armv7=march?armv8.1-a+crc
+-MULTILIB_MATCHES       += march?armv7=march?armv8.2-a
+-MULTILIB_MATCHES       += march?armv7=march?armv8.2-a+fp16
+ endif
+ 
+ # FPU matches
+@@ -163,9 +144,6 @@
+ MULTILIB_MATCHES       += mfpu?vfpv3-d16=mfpu?vfpv4
+ MULTILIB_MATCHES       += mfpu?vfpv3-d16=mfpu?vfpv4-d16
+ MULTILIB_MATCHES       += mfpu?vfpv3-d16=mfpu?neon-vfpv4
+-MULTILIB_MATCHES       += mfpu?fpv5-d16=mfpu?fp-armv8
+-MULTILIB_MATCHES       += mfpu?fpv5-d16=mfpu?neon-fp-armv8
+-MULTILIB_MATCHES       += mfpu?fpv5-d16=mfpu?crypto-neon-fp-armv8
+ endif
+ 
+ 
