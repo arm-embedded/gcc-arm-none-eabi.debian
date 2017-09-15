@@ -1,27 +1,28 @@
-Index: gcc-arm-none-eabi.git/src/gcc/config/arm/t-baremetal
-===================================================================
---- gcc-arm-none-eabi.git.orig/src/gcc/config/arm/t-baremetal
-+++ gcc-arm-none-eabi.git/src/gcc/config/arm/t-baremetal
-@@ -14,6 +14,8 @@ MULTILIB_OPTIONS  += mfloat-abi=softfp/m
- MULTILIB_DIRNAMES += softfp fpu
- MULTILIB_OPTIONS  += mfpu=fpv5-sp-d16/mfpu=fpv5-d16/mfpu=fpv4-sp-d16/mfpu=vfpv3-d16
- MULTILIB_DIRNAMES += fpv5-sp-d16 fpv5-d16 fpv4-sp-d16 vfpv3-d16
-+MULTILIB_OPTIONS  += mbig-endian
-+MULTILIB_DIRNAMES += be
+--- a/src/gcc/config/arm/t-rmprofile
++++ b/src/gcc/config/arm/t-rmprofile
+@@ -52,6 +52,8 @@
+ MULTILIB_OPTIONS       += mfloat-abi=softfp/mfloat-abi=hard
+ MULTILIB_DIRNAMES      += softfp hard
  
- MULTILIB_MATCHES   = march?armv6s-m=mcpu?cortex-m0
- MULTILIB_MATCHES  += march?armv6s-m=mcpu?cortex-m0.small-multiply
-@@ -123,10 +125,13 @@ ifneq (,$(filter armv7 armv7-r armv7-a,$
- MULTILIB_REQUIRED   += mthumb/march=armv7
- MULTILIB_REQUIRED   += mthumb/march=armv7/mfloat-abi=softfp/mfpu=vfpv3-d16
- MULTILIB_REQUIRED   += mthumb/march=armv7/mfloat-abi=hard/mfpu=vfpv3-d16
-+MULTILIB_REQUIRED   += mthumb/march=armv7/mfloat-abi=hard/mfpu=vfpv3-d16/mbig-endian
- MULTILIB_OSDIRNAMES += mthumb/march.armv7=!armv7-ar/thumb
- MULTILIB_OSDIRNAMES += mthumb/march.armv7/mfloat-abi.hard/mfpu.vfpv3-d16=!armv7-ar/thumb/fpu
- MULTILIB_OSDIRNAMES += mthumb/march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16=!armv7-ar/thumb/softfp
-+MULTILIB_OSDIRNAMES += mthumb/march.armv7/mfloat-abi.hard/mfpu.vfpv3-d16=!armv7-ar/thumb/fpu/be
- MULTILIB_REUSE      += mthumb/march.armv7=marm/march.armv7
- MULTILIB_REUSE      += mthumb/march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16=marm/march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16
- MULTILIB_REUSE      += mthumb/march.armv7/mfloat-abi.hard/mfpu.vfpv3-d16=marm/march.armv7/mfloat-abi.hard/mfpu.vfpv3-d16
-+MULTILIB_REUSE      += mthumb/march.armv7/mfloat-abi.hard/mfpu.vfpv3-d16=marm/march.armv7/mfloat-abi.hard/mfpu.vfpv3-d16/mbig-endian
- endif
++MULTILIB_OPTIONS       += mbig-endian
++MULTILIB_DIRNAMES      += eb
+ 
+ # Option combinations to build library with
+ 
+@@ -87,6 +89,8 @@
+ MULTILIB_REQUIRED      += mthumb/march=armv7/mfpu=vfpv3-d16/mfloat-abi=softfp
+ MULTILIB_REQUIRED      += mthumb/march=armv7/mfpu=vfpv3-d16/mfloat-abi=hard
+ 
++# ARMv7-R big endian
++MULTILIB_REQUIRED      += mthumb/march=armv7/mfpu=vfpv3-d16/mfloat-abi=hard/mbig-endian
+ 
+ # Matches
+ 
+@@ -168,6 +172,7 @@
+ MULTILIB_REUSE         += mthumb/march.armv7=march.armv7
+ MULTILIB_REUSE         += mthumb/march.armv7/mfpu.vfpv3-d16/mfloat-abi.softfp=march.armv7/mfpu.vfpv3-d16/mfloat-abi.softfp
+ MULTILIB_REUSE         += mthumb/march.armv7/mfpu.vfpv3-d16/mfloat-abi.hard=march.armv7/mfpu.vfpv3-d16/mfloat-abi.hard
++MULTILIB_REUSE         += mthumb/march.armv7/mfpu.vfpv3-d16/mfloat-abi.hard=march.armv7/mfpu.vfpv3-d16/mfloat-abi.hard/mbig-endian
+ MULTILIB_REUSE         += mthumb/march.armv7/mfpu.vfpv3-d16/mfloat-abi.softfp=march.armv7/mfpu.fpv5-d16/mfloat-abi.softfp
+ MULTILIB_REUSE         += mthumb/march.armv7/mfpu.vfpv3-d16/mfloat-abi.hard=march.armv7/mfpu.fpv5-d16/mfloat-abi.hard
+ MULTILIB_REUSE         += mthumb/march.armv7/mfpu.vfpv3-d16/mfloat-abi.softfp=mthumb/march.armv7/mfpu.fpv5-d16/mfloat-abi.softfp
