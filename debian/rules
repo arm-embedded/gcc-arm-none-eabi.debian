@@ -99,7 +99,7 @@ override_dh_strip:
 override_dh_install:
 	dh_install -p$(PACKAGE_GCC) --sourcedir $(GCC_DEB_TMP_DIR)
 	mkdir -p $(GCC_SOURCE_DEB_TMP_DIR)/usr/src
-	tar -C $(TOP_DIR) -c --xz -f $(GCC_SOURCE_DEB_TMP_DIR)/usr/src/$(PACKAGE_GCC_SOURCE).tar.xz src
+	tar -C $(TOP_DIR) -c -f - src | pxz > $(GCC_SOURCE_DEB_TMP_DIR)/usr/src/$(PACKAGE_GCC_SOURCE).tar.xz
 	dh_install -p$(PACKAGE_GCC_SOURCE) --sourcedir $(GCC_SOURCE_DEB_TMP_DIR)
 
 override_dh_compress:
