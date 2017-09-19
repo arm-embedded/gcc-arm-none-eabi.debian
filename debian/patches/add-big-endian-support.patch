@@ -4,8 +4,8 @@
  MULTILIB_OPTIONS       += mfloat-abi=softfp/mfloat-abi=hard
  MULTILIB_DIRNAMES      += softfp hard
  
-+MULTILIB_OPTIONS       += mbig-endian
-+MULTILIB_DIRNAMES      += eb
++MULTILIB_OPTIONS       += mlittle-endian/mbig-endian
++MULTILIB_DIRNAMES      += le be
  
  # Option combinations to build library with
  
