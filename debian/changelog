@@ -1,3 +1,12 @@
+gcc-arm-none-eabi (15:6.3.1+svn253039-1) unstable; urgency=medium
+
+  * Bumped Standard-Version to 4.0.0 (no changes required)
+  * Use secure urls for VCS fields
+  * Remove ada's doc, dfsg
+  * Using pkg-info.mk instead of parsing changelog by hand
+
+ -- Agustin Henze <tin@debian.org>  Wed, 20 Sep 2017 19:29:25 -0300
+
 gcc-arm-none-eabi (15:6.3.1+svn251940-1) unstable; urgency=medium
 
   * Updated version 6.3.1+svn251940 from 'upstream/6.3.1+svn251940'
