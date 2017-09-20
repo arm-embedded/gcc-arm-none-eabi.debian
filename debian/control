@@ -34,7 +34,7 @@ Build-Depends:
  subversion,
  rename,
  pxz,
-Standards-Version: 3.9.6
+Standards-Version: 4.0.0
 Homepage: http://gcc.gnu.org/
 X-Python-Version: >= 2.7
 Vcs-Git: git://anonscm.debian.org/collab-maint/gcc-arm-none-eabi.git
