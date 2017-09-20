@@ -1,6 +1,8 @@
 #!/usr/bin/make -f
 export DH_VERBOSE=1
 
+include /usr/share/dpkg/pkg-info.mk
+
 MULTILIB_LIST="--with-multilib-list=rmprofile"
 
 PACKAGE_GCC=gcc-arm-none-eabi
@@ -8,7 +10,6 @@ PACKAGE_GCC_SOURCE=gcc-arm-none-eabi-source
 TARGET=arm-none-eabi
 TOP_DIR=$(shell pwd)
 
-DEB_VERSION := $(shell dpkg-parsechangelog | sed -ne "s/^Version: \(.*\)/\1/p")
 DEB_UPSTREAM_VERSION := $(shell echo $(DEB_VERSION) | cut -d ":" -f 2 | cut -d "-" -f 1)
 SVN_REVISION := $(shell echo $(DEB_VERSION) | grep -oP "svn\K([0-9]+)")
 GBP_DO_NOT_REMOVE_SRC_PREPEND_FOLDER=$(TOP_DIR)/../.do_not_remove_src_prepend_folder
