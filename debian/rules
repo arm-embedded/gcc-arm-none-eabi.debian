@@ -132,5 +132,6 @@ get-orig-source:
 		--exclude="gcc/testsuite/obj-c++.dg" \
 		--exclude="gcc/testsuite/objc.dg" \
 		--exclude="gcc/testsuite/objc-obj-c++-shared" \
+		--exclude="gcc/ada/doc" \
 		-f ../$(PACKAGE_GCC)_$(DEB_UPSTREAM_VERSION).orig.tar.xz $(GCC_CHECKOUT_SOURCE_DIR) $(GBP_DO_NOT_REMOVE_SRC_PREPEND_FOLDER)
 	svn revert --recursive $(GCC_CHECKOUT_SOURCE_DIR)
